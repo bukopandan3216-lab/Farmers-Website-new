@@ -4,12 +4,12 @@
   "version": "0.0.1",
   "type": "module",
   "workspaces": [
-    ".",
+    "frontend",
     "backend"
   ],
   "scripts": {
-    "build": "vite build",
-    "dev": "vite"
+    "build": "pnpm -F frontend build",
+    "dev": "pnpm -F frontend dev"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",

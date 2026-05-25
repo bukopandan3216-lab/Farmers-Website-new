@@ -3,6 +3,7 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
+  "nodeVersion": "20.x",
   "rewrites": [
     {
       "source": "/(.*)",

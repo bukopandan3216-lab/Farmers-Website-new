@@ -32,4 +32,10 @@ export const validateConfig = (): void => {
   if (!config.jwtSecret) {
     throw new Error('JWT_SECRET is not defined');
   }
+  if (!config.supabaseUrl) {
+    throw new Error('SUPABASE_URL is not defined');
+  }
+  if (!config.supabaseServiceRoleKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY is not defined');
+  }
 };

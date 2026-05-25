@@ -3,7 +3,7 @@ import { verifyToken, decodeToken } from '../utils/jwt.js';
 import { sendError } from '../utils/response.js';
 import ApiError from '../utils/errors.js';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends Request<any, any, any, any, any> {
   user?: {
     userId: string;
     email: string;

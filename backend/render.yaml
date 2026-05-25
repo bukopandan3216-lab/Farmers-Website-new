@@ -3,7 +3,7 @@ services:
     name: farmdirect-api
     env: node
     plan: starter
-    buildCommand: pnpm install && pnpm prisma:generate && pnpm build
+    buildCommand: cd .. && pnpm install --prod=false && cd backend && pnpm prisma:generate && pnpm build
     startCommand: pnpm start
     healthCheckPath: /health
     envVars:

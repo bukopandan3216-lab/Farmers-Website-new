@@ -3,6 +3,8 @@ import prisma from '../config/database.js';
 import { authMiddleware, roleMiddleware } from '../middleware/auth.js';
 import { sendError, sendSuccess } from '../utils/response.js';
 
+import { OrderStatus } from '@prisma/client';
+
 const router = express.Router();
 
 // Create new order
@@ -76,7 +78,7 @@ router.get('/', authMiddleware, async (req: any, res) => {
       ? {}
       : req.user.role === 'FARMER'
         ? { orderItems: { some: { product: { farmerId: req.user.userId } } } }
-        : { buyerId: req.user.userId, status: { notIn: ['DELIVERED', 'CANCELLED'] } }; // Exclude completed orders
+        : { buyerId: req.user.userId, status: { notIn: [OrderStatus.DELIVERED, OrderStatus.CANCELLED] } }; // Exclude completed orders
 
   const orders = await prisma.order.findMany({
     where,

@@ -1,3 +1,5 @@
+import { PrismaClient, ApplicationStatus } from '@prisma/client';
+
 import prisma from '../config/database.js';
 import { createError } from '../utils/errors.js';
 import { hashPassword } from '../utils/password.js';

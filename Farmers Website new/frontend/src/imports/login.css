@@ -1,0 +1,55 @@
+/* ============================================================
+   FarmDirect - Login & Apply Page Styles (login.css)
+   ============================================================ */
+
+/* LOGIN PAGE */
+.login-page {
+  min-height:calc(100vh - 70px); display:flex;
+  align-items:center; justify-content:center; background:#f8f9fa;
+}
+.login-card {
+  background:white; border:1.5px solid #e5e7eb; border-radius:16px;
+  padding:40px; width:420px; box-shadow:0 4px 20px rgba(0,0,0,.06);
+}
+.login-logo {
+  display:flex; align-items:center; gap:10px; justify-content:center; margin-bottom:8px;
+}
+.login-logo-icon {
+  width:44px; height:44px; background:var(--black); border-radius:12px;
+  display:flex; align-items:center; justify-content:center; color:gold; font-size:22px;
+}
+.login-logo span { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; }
+.login-subtitle { text-align:center; font-size:14px; color:var(--gray); margin-bottom:32px; }
+.login-card h2 { font-size:20px; font-weight:700; margin-bottom:4px; }
+.login-card .form-sub { font-size:13px; color:var(--gray); margin-bottom:24px; }
+.forgot-link { font-size:13px; color:var(--gray); text-decoration:none; display:block; margin-bottom:20px; }
+.forgot-link:hover { color:var(--black); }
+.login-btn {
+  width:100%; background:var(--black); color:white; border:none;
+  padding:14px; border-radius:10px; font-size:15px; font-weight:700;
+  cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .2s;
+  margin-bottom:20px;
+}
+.login-btn:hover { opacity:.85; }
+.login-footer { text-align:center; font-size:13px; color:var(--gray); }
+.login-footer a { color:var(--black); font-weight:700; text-decoration:none; }
+
+/* APPLY PAGE */
+.apply-page { padding:60px 40px; max-width:800px; margin:0 auto; }
+.apply-page h1 { font-family:'Playfair Display',serif; font-size:36px; text-align:center; margin-bottom:8px; }
+.apply-page .subtitle { text-align:center; color:var(--gray); margin-bottom:36px; font-size:15px; }
+.apply-tabs {
+  display:flex; background:var(--gray-light); border-radius:10px;
+  padding:4px; gap:4px; margin-bottom:32px;
+}
+.apply-tab {
+  flex:1; padding:12px; border:none; background:transparent;
+  border-radius:8px; font-size:15px; font-weight:600; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:background .2s;
+}
+.apply-tab.active { background:white; box-shadow:0 1px 4px rgba(0,0,0,.1); }
+.apply-form-card {
+  border:1.5px solid #e5e7eb; border-radius:14px; padding:36px;
+}
+.apply-form-card h2 { font-size:20px; font-weight:700; margin-bottom:6px; }
+.apply-form-card .form-desc { font-size:14px; color:var(--gray); margin-bottom:28px; }

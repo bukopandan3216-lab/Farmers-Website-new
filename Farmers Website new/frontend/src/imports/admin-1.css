@@ -1,0 +1,55 @@
+/* ============================================================
+   FarmDirect - Admin Panel Styles (admin.css)
+   ============================================================ */
+
+/* Admin Tab Buttons */
+.admin-tab-btn {
+  padding:12px 20px; border:none; border-radius:8px;
+  background:white; font-size:14px; font-weight:600; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:all .2s; color:#6b7280;
+  border-bottom:3px solid transparent; margin-bottom:-3px;
+}
+.admin-tab-btn.active {
+  color:#10b981; border-bottom-color:#10b981;
+}
+.admin-tab-btn:hover { color:#1f2937; }
+
+/* Admin Sub Tab Buttons */
+.admin-sub-tab-btn {
+  padding:8px 16px; border:1.5px solid #d1d5db; border-radius:8px;
+  background:white; font-size:12px; font-weight:600; cursor:pointer;
+  font-family:'DM Sans',sans-serif; transition:all .2s; color:#6b7280;
+}
+.admin-sub-tab-btn.active {
+  background:#10b981; color:white; border-color:#10b981;
+}
+.admin-sub-tab-btn:hover { border-color:#10b981; color:#10b981; }
+
+/* Admin Tab Content */
+.admin-tab-content { animation:fadeIn .2s ease-in; }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* Modal Styles */
+.modal {
+  display:flex; position:fixed; z-index:1000; left:0; top:0;
+  width:100%; height:100%; background-color:rgba(0,0,0,.5);
+  align-items:center; justify-content:center;
+}
+.modal-content {
+  background-color:white; padding:32px; border-radius:16px;
+  box-shadow:0 10px 40px rgba(0,0,0,.2); max-width:600px;
+  width:90%;
+}
+.modal-close {
+  color:#999; float:right; font-size:28px; font-weight:bold;
+  cursor:pointer; transition:color .2s;
+}
+.modal-close:hover { color:#000; }
+
+/* Farmer Tab Content */
+.farmer-tab-content { animation:fadeIn .2s ease-in; }
+
+/* Responsive Tables */
+table { width:100%; border-collapse:collapse; font-size:14px; }
+tbody tr:hover { background:#f9fafb; }
+th { text-align:left; font-weight:600; color:#374151; background:#f8f9fa; }

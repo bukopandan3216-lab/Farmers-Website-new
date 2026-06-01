@@ -1,0 +1,158 @@
+<!-- ============================================================
+     INTEGRATION TEMPLATE FOR index.php
+     ============================================================
+     
+     This file shows how to properly integrate the new separated HTML files
+     into your main index.php. You can either:
+     
+     Option 1: Include the HTML files directly using PHP include
+     Option 2: Load them dynamically via JavaScript
+     Option 3: Keep them in separate .html files and reference them
+     
+     Below is the recommended approach.
+     ============================================================ -->
+
+<?php
+// At the top of your index.php, add these variables to track current page
+$currentUser = currentUser();
+$pageTitle = 'FarmDirect - Fresh Produce Without the Middleman';
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- ... existing head content ... -->
+    <link rel="stylesheet" href="Asset/admin.css"/>
+</head>
+<body>
+    <!-- ... existing navbar and other pages ... -->
+    
+    <!-- ============ OPTION 1: Include HTML files inline ============ -->
+    <!-- This option embeds the HTML directly in the page -->
+    
+    <?php
+    // Include the new HTML pages at the end of your body (before closing body tag)
+    // Make sure these includes happen after all other content
+    $htmlDir = __DIR__ . '/Asset/';
+    
+    // These will include the HTML pages but won't execute if they contain PHP
+    // So we need to extract the HTML portions only
+    ?>
+    
+    <!-- Admin Page -->
+    <?php if (file_exists($htmlDir . 'admin.html')): ?>
+        <?php include_once $htmlDir . 'admin.html'; ?>
+    <?php endif; ?>
+    
+    <!-- Buyer Profile Page -->
+    <?php if (file_exists($htmlDir . 'buyer.html')): ?>
+        <?php include_once $htmlDir . 'buyer.html'; ?>
+    <?php endif; ?>
+    
+    <!-- Farmer Pages -->
+    <?php if (file_exists($htmlDir . 'farmer.html')): ?>
+        <?php include_once $htmlDir . 'farmer.html'; ?>
+    <?php endif; ?>
+    
+    <!-- ============ OR OPTION 2: Load via JavaScript ============ -->
+    <!-- If you prefer to load dynamically, uncomment below -->
+    
+    <!--
+    <script>
+        // Load HTML files dynamically (e.g., on page initialization)
+        async function loadPageHTML() {
+            const pages = ['admin.html', 'buyer.html', 'farmer.html'];
+            const container = document.getElementById('pages-container');
+            
+            for (const page of pages) {
+                const response = await fetch(`Asset/${page}`);
+                const html = await response.text();
+                container.innerHTML += html;
+            }
+        }
+        
+        // Call this after document is ready
+        document.addEventListener('DOMContentLoaded', loadPageHTML);
+    </script>
+    -->
+    
+    <!-- ============ EXISTING SCRIPTS ============ -->
+    <!-- Make sure to include the updated JavaScript files -->
+    <script src="Asset/script.js"></script>
+    <script src="Asset/auth.js"></script>
+    <script src="Asset/admin.js"></script>    <!-- NEW -->
+    <script src="Asset/buyer.js"></script>    <!-- NEW -->
+    <script src="Asset/farmer.js"></script>   <!-- NEW -->
+    
+</body>
+</html>
+
+<!-- ============================================================
+     IMPORTANT NOTES FOR INTEGRATION
+     ============================================================
+     
+     1. FILE LOCATIONS:
+        - admin.html    -> Asset/admin.html
+        - buyer.html    -> Asset/buyer.html
+        - farmer.html   -> Asset/farmer.html
+        - admin.js      -> Asset/admin.js (ALREADY UPDATED)
+        - buyer.js      -> Asset/buyer.js (ALREADY UPDATED)
+        - farmer.js     -> Asset/farmer.js (ALREADY UPDATED)
+        - admin.css     -> Asset/admin.css (ALREADY UPDATED)
+     
+     2. FUNCTION CALLS:
+        These functions from the updated JS files can be called:
+        
+        Admin:
+        - showAdminPanel()              // Load admin dashboard
+        - switchAdminTab('verification', event)  // Switch tabs
+        - filterApplicants('farmer', event)
+        
+        Buyer:
+        - renderBuyerProfile()          // Show buyer profile
+        - handleCheckout(event)         // Process checkout
+        
+        Farmer:
+        - renderFarmerDashboard()       // Show farmer dashboard
+        - switchFarmerTab('overview', event)     // Switch dashboard tabs
+        - showFarmerStore(farmerId)     // Show farmer's public store
+     
+     3. DATABASE INTEGRATION:
+        The admin.js and other JS files now call these API endpoints.
+        You need to implement these in your products.php:
+        
+        - get_admin_dashboard_stats
+        - get_all_users
+        - get_user_details
+        - get_all_products
+        - get_all_orders
+        - get_admin_reports
+        - get_buyer_profile
+        - get_farmer_dashboard
+        - get_farmer_products
+        - get_farmer_orders
+        
+        See IMPLEMENTATION_GUIDE.md for full endpoint specifications
+     
+     4. NAVIGATION SETUP:
+        Update your navigation to call the right functions:
+        
+        Admin Button:
+        <a href="#" onclick="showAdminPanel()">⚙️ Admin</a>
+        
+        Buyer Profile Button:
+        <a href="#" onclick="renderBuyerProfile()">My Account</a>
+        
+        Farmer Dashboard Button:
+        <a href="#" onclick="renderFarmerDashboard()">My Store</a>
+     
+     5. STYLING:
+        The new CSS is in admin.css with classes:
+        - .admin-tab-btn
+        - .admin-sub-tab-btn
+        - .modal, .modal-content
+        - .farmer-tab-content
+        
+        Make sure admin.css is linked in your <head>
+     
+     ============================================================ -->

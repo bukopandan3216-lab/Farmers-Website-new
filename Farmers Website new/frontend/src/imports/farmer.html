@@ -1,0 +1,170 @@
+<!-- ============================================================
+     FARMER DASHBOARD
+     ============================================================ -->
+<div class="page" id="page-farmer-dashboard">
+  <div class="cart-page" style="max-width:1100px;">
+    <h1>Farmer Dashboard</h1>
+    <p style="color:var(--gray); margin-bottom:32px;">Manage your store, products, and orders.</p>
+
+    <!-- Dashboard Tabs -->
+    <div style="display:flex; gap:12px; margin-bottom:32px; border-bottom:2px solid #e5e7eb; flex-wrap:wrap;">
+      <button class="admin-tab-btn active" onclick="switchFarmerTab('overview', event)" style="border-bottom:3px solid #10b981; margin-bottom:-2px;">📊 Overview</button>
+      <button class="admin-tab-btn" onclick="switchFarmerTab('products', event)">📦 My Products</button>
+      <button class="admin-tab-btn" onclick="switchFarmerTab('orders', event)">🛒 Orders</button>
+      <button class="admin-tab-btn" onclick="switchFarmerTab('analytics', event)">📈 Analytics</button>
+    </div>
+
+    <!-- Overview Tab -->
+    <div id="farmer-tab-overview" class="farmer-tab-content">
+      <!-- Store Info -->
+      <div class="contact-card" style="margin-bottom:32px;">
+        <h2 style="font-size:20px; margin-bottom:24px;">Store Information</h2>
+        <div id="farmer-store-info" style="display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:start;">
+          <div>
+            <img id="farmer-store-photo" src="" alt="Store Photo" style="width:100%; border-radius:12px; margin-bottom:16px; object-fit:cover; max-height:300px;"/>
+            <button class="submit-btn" style="width:100%; margin-bottom:12px;" onclick="editFarmerStore()">Edit Store Info</button>
+          </div>
+          <div id="farmer-store-details"></div>
+        </div>
+      </div>
+
+      <!-- Dashboard Stats -->
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:16px; margin-bottom:32px;">
+        <div style="background:#ecfdf5; padding:24px; border-radius:12px; border-left:4px solid #10b981;">
+          <div style="font-size:12px; color:#047857; text-transform:uppercase; margin-bottom:12px;">Total Products</div>
+          <div style="font-size:32px; font-weight:bold; color:#10b981;" id="farmer-stat-products">0</div>
+        </div>
+        <div style="background:#dbeafe; padding:24px; border-radius:12px; border-left:4px solid #0284c7;">
+          <div style="font-size:12px; color:#075985; text-transform:uppercase; margin-bottom:12px;">Total Orders</div>
+          <div style="font-size:32px; font-weight:bold; color:#0284c7;" id="farmer-stat-orders">0</div>
+        </div>
+        <div style="background:#e0e7ff; padding:24px; border-radius:12px; border-left:4px solid #6366f1;">
+          <div style="font-size:12px; color:#312e81; text-transform:uppercase; margin-bottom:12px;">Total Revenue</div>
+          <div style="font-size:32px; font-weight:bold; color:#6366f1;" id="farmer-stat-revenue">₱0</div>
+        </div>
+        <div style="background:#fef3c7; padding:24px; border-radius:12px; border-left:4px solid #f59e0b;">
+          <div style="font-size:12px; color:#92400e; text-transform:uppercase; margin-bottom:12px;">Avg Rating</div>
+          <div style="font-size:32px; font-weight:bold; color:#f59e0b;" id="farmer-stat-rating">4.5★</div>
+        </div>
+      </div>
+
+      <!-- Recent Orders -->
+      <div class="contact-card">
+        <h2 style="font-size:20px; margin-bottom:24px;">Recent Orders</h2>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8f9fa; border-bottom:2px solid #e5e7eb;">
+                <th style="padding:12px; text-align:left;">Order ID</th>
+                <th style="padding:12px; text-align:left;">Buyer</th>
+                <th style="padding:12px; text-align:left;">Amount</th>
+                <th style="padding:12px; text-align:left;">Status</th>
+                <th style="padding:12px; text-align:left;">Date</th>
+              </tr>
+            </thead>
+            <tbody id="farmer-recent-orders"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products Tab -->
+    <div id="farmer-tab-products" class="farmer-tab-content" style="display:none;">
+      <div class="contact-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+          <h2 style="font-size:20px;">My Products</h2>
+          <button class="submit-btn" onclick="showAddProductForm()">+ Add New Product</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(250px, 1fr)); gap:20px;" id="farmer-products-list"></div>
+      </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div id="farmer-tab-orders" class="farmer-tab-content" style="display:none;">
+      <div class="contact-card">
+        <h2 style="font-size:20px; margin-bottom:24px;">Order Management</h2>
+        <div style="margin-bottom:24px; display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="admin-sub-tab-btn active" onclick="filterFarmerOrders('all', event)">All Orders</button>
+          <button class="admin-sub-tab-btn" onclick="filterFarmerOrders('pending', event)">Pending</button>
+          <button class="admin-sub-tab-btn" onclick="filterFarmerOrders('confirmed', event)">Confirmed</button>
+          <button class="admin-sub-tab-btn" onclick="filterFarmerOrders('shipped', event)">Shipped</button>
+          <button class="admin-sub-tab-btn" onclick="filterFarmerOrders('delivered', event)">Delivered</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8f9fa; border-bottom:2px solid #e5e7eb;">
+                <th style="padding:12px; text-align:left;">Order ID</th>
+                <th style="padding:12px; text-align:left;">Buyer</th>
+                <th style="padding:12px; text-align:left;">Items</th>
+                <th style="padding:12px; text-align:left;">Amount</th>
+                <th style="padding:12px; text-align:left;">Status</th>
+                <th style="padding:12px; text-align:center;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="farmer-orders-list"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics Tab -->
+    <div id="farmer-tab-analytics" class="farmer-tab-content" style="display:none;">
+      <div class="contact-card">
+        <h2 style="font-size:20px; margin-bottom:32px;">Sales Analytics</h2>
+        
+        <!-- Analytics Cards -->
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; margin-bottom:32px;">
+          <div style="background:#f0fdf4; padding:20px; border-radius:12px; border:1px solid #bbf7d0;">
+            <div style="font-size:12px; color:#166534; text-transform:uppercase; margin-bottom:8px;">Sales This Month</div>
+            <div style="font-size:28px; font-weight:bold; color:#22c55e;" id="farmer-sales-month">₱0</div>
+          </div>
+          <div style="background:#f5f3ff; padding:20px; border-radius:12px; border:1px solid #e9d5ff;">
+            <div style="font-size:12px; color:#5b21b6; text-transform:uppercase; margin-bottom:8px;">Orders This Month</div>
+            <div style="font-size:28px; font-weight:bold; color:#a855f7;" id="farmer-orders-month">0</div>
+          </div>
+          <div style="background:#fef2f2; padding:20px; border-radius:12px; border:1px solid #fecaca;">
+            <div style="font-size:12px; color:#7f1d1d; text-transform:uppercase; margin-bottom:8px;">Top Product</div>
+            <div style="font-size:18px; font-weight:bold; color:#ef4444;" id="farmer-top-product">N/A</div>
+          </div>
+          <div style="background:#eff6ff; padding:20px; border-radius:12px; border:1px solid #bfdbfe;">
+            <div style="font-size:12px; color:#1e3a8a; text-transform:uppercase; margin-bottom:8px;">Customer Satisfaction</div>
+            <div style="font-size:28px; font-weight:bold; color:#3b82f6;" id="farmer-satisfaction">0%</div>
+          </div>
+        </div>
+
+        <!-- Sales Chart Placeholder -->
+        <div style="background:#f8f9fa; padding:40px; border-radius:12px; text-align:center; border:2px dashed #d1d5db;">
+          <div style="font-size:48px; margin-bottom:12px;">📊</div>
+          <div style="font-size:16px; color:var(--gray); margin-bottom:12px;">Sales Chart</div>
+          <div style="font-size:14px; color:var(--gray);">Chart visualization will be displayed here</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     FARMER STORE PAGE (Public View)
+     ============================================================ -->
+<div class="page" id="page-farmer-store">
+  <div style="background:#f8f9fa; padding:40px;">
+    <div style="max-width:1200px; margin:0 auto;">
+      <!-- Store Header -->
+      <div style="display:flex; gap:40px; align-items:flex-start; margin-bottom:60px;">
+        <div style="flex:1;">
+          <div id="farmer-store-info"></div>
+        </div>
+        <div style="width:250px;">
+          <button class="submit-btn" onclick="showPage('home')" style="width:100%;">← Back to Home</button>
+        </div>
+      </div>
+
+      <!-- Store Products -->
+      <div style="background:white; padding:40px; border-radius:14px; border:1.5px solid #e5e7eb;">
+        <h2 style="font-size:24px; margin-bottom:24px;">📦 Products from this Store</h2>
+        <div class="products-grid" id="farmer-store-products"></div>
+      </div>
+    </div>
+  </div>
+</div>

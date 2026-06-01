@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request } from 'express';
 import multer from 'multer';
 import { randomUUID } from 'crypto';
 import fs from 'fs';
@@ -23,7 +23,7 @@ if (!fs.existsSync(uploadsBasePath)) {
   fs.mkdirSync(uploadsBasePath, { recursive: true });
 }
 
-router.post('/:bucket', upload.single('file'), async (req, res) => {
+router.post('/:bucket', upload.single('file'), async (req: Request & { file?: Express.Multer.File }, res) => {
   if (!req.file) return sendError(res, 400, 'File is required');
 
   const bucket = req.params.bucket;

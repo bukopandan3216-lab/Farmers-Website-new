@@ -1,5 +1,3 @@
-import { Role, ApplicationStatus } from '@prisma/client';     //Addded Role and ApplicationStatus imports as fic by chatgpt to fix type error in application.service.ts
-
 import prisma from '../config/database.js';
 import { createError } from '../utils/errors.js';
 import { hashPassword } from '../utils/password.js';
@@ -12,7 +10,7 @@ export const applicationService = {
     email: string;
     phone: string;
     address: string;
-    role: Role;
+    role: 'BUYER' | 'FARMER' | 'ADMIN';
     notificationPreference: 'EMAIL' | 'PHONE';
     commissionFrequency?: 'DAILY' | 'WEEKLY' | 'MONTHLY';
     farmName?: string;
@@ -61,7 +59,7 @@ export const applicationService = {
         profileImageUrl: data.profileImageUrl || null,
         validIdUrl: data.validIdUrl || null,
         businessPermitUrl: data.businessPermitUrl || null,
-        status: ApplicationStatus.PENDING,
+        status: 'PENDING',
       },
     });
 
@@ -126,7 +124,7 @@ export const applicationService = {
       throw createError(404, 'Application not found');
     }
 
-    if (application.status !== ApplicationStatus.PENDING) {
+    if (application.status !== 'PENDING') {
       throw createError(400, 'Only pending applications can be approved');
     }
 
@@ -158,7 +156,7 @@ export const applicationService = {
       },
     });
 
-    if (application.role === Role.FARMER) {
+    if (application.role === 'FARMER') {
       await prisma.farmerProfile.create({
         data: {
           userId: user.id,
@@ -175,7 +173,7 @@ export const applicationService = {
     const updatedApplication = await prisma.application.update({
       where: { id: applicationId },
       data: {
-        status: ApplicationStatus.APPROVED,
+        status: 'APPROVED',
       },
     });
 
@@ -237,7 +235,7 @@ export const applicationService = {
       throw createError(404, 'Application not found');
     }
 
-    if (application.status !== ApplicationStatus.APPROVED) {
+    if (application.status !== 'APPROVED') {
       throw createError(400, 'Application must be approved before account creation');
     }
 
@@ -283,7 +281,7 @@ export const applicationService = {
             },
           });
 
-      if (application.role === Role.FARMER) {
+      if (application.role === 'FARMER') {
         const existingProfile = await tx.farmerProfile.findUnique({
           where: { userId: user.id },
         });
@@ -314,7 +312,7 @@ export const applicationService = {
       await tx.application.update({
         where: { id: applicationId },
         data: {
-          status: ApplicationStatus.APPROVED,
+          status: 'APPROVED',
         },
       });
 
@@ -418,7 +416,7 @@ export const applicationService = {
     const updatedApplication = await prisma.application.update({
       where: { id: applicationId },
       data: {
-        status: ApplicationStatus.REJECTED,
+        status: 'REJECTED',
         rejectionReason,
       },
     });
@@ -439,7 +437,7 @@ export const applicationService = {
   async resendApprovalEmail(applicationId: string) {
     const application = await prisma.application.findUnique({ where: { id: applicationId } });
     if (!application) throw createError(404, 'Application not found');
-    if (application.status !== ApplicationStatus.APPROVED) throw createError(400, 'Only approved applications can be resent an approval email');
+    if (application.status !== 'APPROVED') throw createError(400, 'Only approved applications can be resent an approval email');
 
     // Find the user created during approval
     const existingUser = await prisma.user.findUnique({ where: { email: application.email } });

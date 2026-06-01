@@ -38,7 +38,7 @@ const storage: StorageEngine = multer.diskStorage({
 });
 
 // File filter to accept only images and PDFs
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const fileFilter = (req: any, file: any, cb: multer.FileFilterCallback) => {
   const allowedMimes = [
     'image/jpeg',
     'image/png',

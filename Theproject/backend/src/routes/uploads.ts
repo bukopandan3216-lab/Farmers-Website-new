@@ -23,10 +23,11 @@ if (!fs.existsSync(uploadsBasePath)) {
   fs.mkdirSync(uploadsBasePath, { recursive: true });
 }
 
-router.post('/:bucket', upload.single('file'), async (req: Request & { file?: Express.Multer.File }, res) => {
+router.post('/:bucket', upload.single('file'), async (req: Request & { file?: any }, res) => {
   if (!req.file) return sendError(res, 400, 'File is required');
 
-  const bucket = req.params.bucket;
+  //const bucket = req.params.bucket;
+  const bucket = String(req.params.bucket);
   const extension = req.file.originalname.split('.').pop() || 'jpg';
   const fileName = `${randomUUID()}.${extension}`;
 

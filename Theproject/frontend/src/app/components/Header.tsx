@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, User, ShoppingCart, LogOut, MessageCircle } from "lucide-react";
+import {Search,User,ShoppingCart,LogOut,MessageCircle,Menu,X,} from "lucide-react";
+//import { Search, User, ShoppingCart, LogOut, MessageCircle } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { Input } from "./ui/input";
@@ -11,6 +12,7 @@ export function Header() {
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     if (confirm("Are you sure you want to logout?")) {
@@ -45,14 +47,47 @@ export function Header() {
             <span className="text-xl font-bold hidden sm:block text-emerald-600">FarmDirect</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
-            <Link to="/shop" className="hover:text-emerald-600 transition-colors font-medium">Shop All</Link>
-            <Link to="/stores" className="hover:text-emerald-600 transition-colors font-medium">Stores</Link>
-            <Link to="/about" className="hover:text-emerald-600 transition-colors font-medium">About</Link>
-            <Link to="/contact" className="hover:text-emerald-600 transition-colors font-medium">Contact</Link>
-          </nav>
+         <nav className="hidden md:flex items-center gap-8">
+  <Link to="/shop" className="hover:text-emerald-600 transition-colors font-medium">
+    Shop All
+  </Link>
 
-          <form onSubmit={handleSearch} className="flex items-center gap-3 flex-1 max-w-md">
+  <Link to="/stores" className="hover:text-emerald-600 transition-colors font-medium">
+    Stores
+  </Link>
+
+  <Link to="/about" className="hover:text-emerald-600 transition-colors font-medium">
+    About
+  </Link>
+
+  <Link to="/contact" className="hover:text-emerald-600 transition-colors font-medium">
+    Contact
+  </Link>
+</nav>
+<button
+  className="md:hidden"
+  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+>
+  {mobileMenuOpen ? (
+    <X className="h-6 w-6" />
+  ) : (
+    <Menu className="h-6 w-6" />
+  )}
+</button>
+
+
+          <form
+  onSubmit={handleSearch}
+  className="hidden md:flex items-center gap-3 flex-1 max-w-md"
+>
+  <Button
+  variant="ghost"
+  size="icon"
+  className="md:hidden"
+>
+  <Search className="h-5 w-5" />
+</Button>
+
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -131,6 +166,77 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {mobileMenuOpen && (
+  <div className="md:hidden border-t bg-white shadow-lg">
+    <div className="flex flex-col p-4 space-y-3">
+
+      <Link
+        to="/shop"
+        onClick={() => setMobileMenuOpen(false)}
+        className="font-medium hover:text-emerald-600"
+      >
+        Shop All
+      </Link>
+
+      <Link
+        to="/stores"
+        onClick={() => setMobileMenuOpen(false)}
+        className="font-medium hover:text-emerald-600"
+      >
+        Stores
+      </Link>
+
+      <Link
+        to="/about"
+        onClick={() => setMobileMenuOpen(false)}
+        className="font-medium hover:text-emerald-600"
+      >
+        About
+      </Link>
+
+      <Link
+        to="/contact"
+        onClick={() => setMobileMenuOpen(false)}
+        className="font-medium hover:text-emerald-600"
+      >
+        Contact
+      </Link>
+
+      {isAuthenticated && (
+        <>
+          <hr />
+
+          <Link
+            to={getUserDashboard()}
+            onClick={() => setMobileMenuOpen(false)}
+            className="font-medium"
+          >
+            My Account
+          </Link>
+
+          <Link
+            to="/messages"
+            onClick={() => setMobileMenuOpen(false)}
+            className="font-medium"
+          >
+            Messages
+          </Link>
+
+          {user?.role === "BUYER" && (
+            <Link
+              to="/cart"
+              onClick={() => setMobileMenuOpen(false)}
+              className="font-medium"
+            >
+              Cart ({cartCount})
+            </Link>
+          )}
+        </>
+      )}
+    </div>
+  </div>
+)}
     </header>
   );
 }

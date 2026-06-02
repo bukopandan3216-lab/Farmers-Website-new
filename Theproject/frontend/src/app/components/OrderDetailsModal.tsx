@@ -3,6 +3,9 @@ import { X, MapPin, Package, Truck, CheckCircle, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { Badge } from "./ui/badge";
 import { OrderTrackingComponent } from "./OrderTrackingComponent";
+import { orderApi } from "../services/api";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface OrderItem {
   name: string;
@@ -35,60 +38,95 @@ interface OrderDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
   userRole?: "farmer" | "buyer" | "admin";
+  onStatusUpdated?: () => void;
 }
 
-export function OrderDetailsModal({ order, isOpen, onClose, userRole }: OrderDetailsModalProps) {
+export function OrderDetailsModal({ order, isOpen, onClose, userRole, onStatusUpdated }: OrderDetailsModalProps) {
+  // ALL hooks must be called unconditionally before any early return
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showTracking, setShowTracking] = useState(false);
+  const queryClient = useQueryClient();
+
   if (!isOpen || !order) return null;
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "confirmed":
-        return "bg-blue-100 text-blue-800";
-      case "preparing":
-        return "bg-purple-100 text-purple-800";
+      case "pending": return "bg-yellow-100 text-yellow-800";
+      case "confirmed": return "bg-blue-100 text-blue-800";
+      case "preparing": return "bg-purple-100 text-purple-800";
       case "out for delivery":
-        return "bg-orange-100 text-orange-800";
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      case "cancelled":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case "out_for_delivery": return "bg-orange-100 text-orange-800";
+      case "delivered": return "bg-green-100 text-green-800";
+      case "cancelled": return "bg-red-100 text-red-800";
+      default: return "bg-gray-100 text-gray-800";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case "pending":
-        return <Clock className="h-5 w-5" />;
+      case "pending": return <Clock className="h-5 w-5" />;
       case "confirmed":
-      case "preparing":
-        return <Package className="h-5 w-5" />;
+      case "preparing": return <Package className="h-5 w-5" />;
       case "out for delivery":
-        return <Truck className="h-5 w-5" />;
-      case "delivered":
-        return <CheckCircle className="h-5 w-5" />;
-      default:
-        return <Clock className="h-5 w-5" />;
+      case "out_for_delivery": return <Truck className="h-5 w-5" />;
+      case "delivered": return <CheckCircle className="h-5 w-5" />;
+      default: return <Clock className="h-5 w-5" />;
     }
   };
-
-  const [showTracking, setShowTracking] = useState(false);
   const deliveryAddress = order.delivery_address ?? (order as any).deliveryAddress ?? "";
   const createdAt = order.created_at ?? (order as any).createdAt ?? "";
   const currentStatus = ((order.status || "").replace(/\s+/g, "_").toUpperCase() || "PENDING") as any;
   const trackingHistory = (order as any).trackingHistory || (order as any).tracking_history || [];
   const estimatedDelivery = (order as any).estimated_delivery || (order as any).estimatedDelivery || undefined;
 
+  const normalizedStatus = (order.status || "").toUpperCase().replace(/\s+/g, "_");
+
   const orderSteps = [
-    { label: "Order Placed", status: "pending", completed: true },
-    { label: "Confirmed", status: "confirmed", completed: ["confirmed", "preparing", "out for delivery", "delivered"].includes(order.status.toLowerCase()) },
-    { label: "Preparing", status: "preparing", completed: ["preparing", "out for delivery", "delivered"].includes(order.status.toLowerCase()) },
-    { label: "Out for Delivery", status: "out for delivery", completed: ["out for delivery", "delivered"].includes(order.status.toLowerCase()) },
-    { label: "Delivered", status: "delivered", completed: order.status.toLowerCase() === "delivered" },
+    { label: "Order Placed", key: "PENDING", completed: true },
+    { label: "Confirmed", key: "CONFIRMED", completed: ["CONFIRMED", "PREPARING", "OUT_FOR_DELIVERY", "SHIPPED", "DELIVERED"].includes(normalizedStatus) },
+    { label: "Preparing", key: "PREPARING", completed: ["PREPARING", "OUT_FOR_DELIVERY", "SHIPPED", "DELIVERED"].includes(normalizedStatus) },
+    { label: "Out for Delivery", key: "OUT_FOR_DELIVERY", completed: ["OUT_FOR_DELIVERY", "SHIPPED", "DELIVERED"].includes(normalizedStatus) },
+    { label: "Delivered", key: "DELIVERED", completed: normalizedStatus === "DELIVERED" },
   ];
+
+  const currentStepIndex = orderSteps.findIndex(s => !s.completed) - 1;
+  const progressPercent = Math.max(0, Math.min(100, ((currentStepIndex < 0 ? orderSteps.length - 1 : currentStepIndex) / (orderSteps.length - 1)) * 100));
+
+  const handleFarmerStatusUpdate = async (newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const orderId = String((order as any).id);
+      await orderApi.updateStatus(orderId, newStatus);
+      toast.success(`Order status updated to ${newStatus.toLowerCase().replace(/_/g, " ")}`);
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["farmerDashboard"] });
+      if (onStatusUpdated) onStatusUpdated();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to update order status");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleBuyerComplete = async () => {
+    setIsUpdating(true);
+    try {
+      const orderId = String((order as any).id);
+      await orderApi.confirmDelivery(orderId);
+      toast.success("Order marked as completed!");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      queryClient.invalidateQueries({ queryKey: ["completedOrders"] });
+      if (onStatusUpdated) onStatusUpdated();
+      onClose();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to mark order as complete");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const statusLabel = (order.status || "").toLowerCase().replace(/_/g, " ");
 
   return (
     <div
@@ -121,8 +159,18 @@ export function OrderDetailsModal({ order, isOpen, onClose, userRole }: OrderDet
                 Order Status
               </h3>
               <Badge className={getStatusColor(order.status)}>
-                {order.status}
+                {statusLabel}
               </Badge>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div
+                  className="h-2 bg-green-500 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
 
             <div className="relative">
@@ -130,15 +178,17 @@ export function OrderDetailsModal({ order, isOpen, onClose, userRole }: OrderDet
                 {orderSteps.map((step, index) => (
                   <div key={index} className="flex flex-col items-center flex-1">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium transition-colors ${
                         step.completed
                           ? "bg-green-500 text-white"
-                          : "bg-gray-300 text-gray-600"
+                          : normalizedStatus === step.key
+                          ? "bg-blue-500 text-white ring-2 ring-blue-300"
+                          : "bg-gray-200 text-gray-500"
                       }`}
                     >
                       {step.completed ? "✓" : index + 1}
                     </div>
-                    <div className="text-xs mt-2 text-center max-w-20">
+                    <div className="text-xs mt-2 text-center max-w-20 leading-tight">
                       {step.label}
                     </div>
                     {index < orderSteps.length - 1 && (
@@ -259,18 +309,20 @@ export function OrderDetailsModal({ order, isOpen, onClose, userRole }: OrderDet
           <div>
             <h3 className="mb-4">Order Items</h3>
             <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-              {(order.items ?? (order as any).orderItems ?? []).map((item, idx) => (
+              {(order.items ?? (order as any).orderItems ?? []).map((item: any, idx: number) => (
                 <div
                   key={idx}
                   className="flex justify-between items-center pb-3 border-b border-border last:border-0 last:pb-0"
                 >
                   <div className="flex-1">
-                    <div className="font-medium">{item.name}</div>
+                    <div className="font-medium">{item.name ?? item.product?.name ?? "Product"}</div>
                     <div className="text-sm text-muted-foreground">
-                      Qty: {item.qty} × ₱{Number(item.unit_price || 0).toFixed(2)}
+                      Qty: {item.qty ?? item.quantity} × ₱{Number(item.unit_price ?? item.price ?? 0).toFixed(2)}
                     </div>
                   </div>
-                  <div className="font-medium">₱{Number(item.subtotal || 0).toFixed(2)}</div>
+                  <div className="font-medium">
+                    ₱{Number(item.subtotal ?? ((item.price ?? 0) * (item.quantity ?? 1))).toFixed(2)}
+                  </div>
                 </div>
               ))}
 
@@ -285,17 +337,60 @@ export function OrderDetailsModal({ order, isOpen, onClose, userRole }: OrderDet
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 justify-end">
-            <Button variant="outline" onClick={onClose}>
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-3 justify-end">
+            <Button variant="outline" onClick={onClose} disabled={isUpdating}>
               Close
             </Button>
-            {order.status.toLowerCase() === "out for delivery" && (
-              <Button onClick={() => setShowTracking(true)}>
+
+            {/* Farmer Action Buttons */}
+            {userRole === "farmer" && normalizedStatus === "PENDING" && (
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => handleFarmerStatusUpdate("CONFIRMED")}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Updating..." : "✓ Confirm Order"}
+              </Button>
+            )}
+            {userRole === "farmer" && normalizedStatus === "CONFIRMED" && (
+              <Button
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+                onClick={() => handleFarmerStatusUpdate("PREPARING")}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Updating..." : "📦 Preparing"}
+              </Button>
+            )}
+            {userRole === "farmer" && normalizedStatus === "PREPARING" && (
+              <Button
+                className="bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => handleFarmerStatusUpdate("OUT_FOR_DELIVERY")}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Updating..." : "🚚 Out for Delivery"}
+              </Button>
+            )}
+
+            {/* Buyer Complete Button */}
+            {userRole === "buyer" && normalizedStatus === "OUT_FOR_DELIVERY" && (
+              <Button
+                className="bg-green-600 hover:bg-green-700 text-white"
+                onClick={handleBuyerComplete}
+                disabled={isUpdating}
+              >
+                {isUpdating ? "Updating..." : "✅ Mark as Complete"}
+              </Button>
+            )}
+
+            {/* Track Order button */}
+            {normalizedStatus === "OUT_FOR_DELIVERY" && (
+              <Button variant="outline" onClick={() => setShowTracking(true)}>
                 Track Order
               </Button>
             )}
           </div>
+
           {showTracking && (
             <div className="mt-6">
               <OrderTrackingComponent

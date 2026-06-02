@@ -175,6 +175,7 @@ export const orderApi = {
   create: (payload: { items: { productId: string; quantity: number }[]; deliveryAddress: string }) =>
     unwrap<any>(api.post("/orders", payload)),
   list: () => unwrap<any[]>(api.get("/orders")),
+  listCompleted: () => unwrap<any[]>(api.get("/orders/completed")),
   checkoutSession: (orderId: string) => unwrap<any>(api.post("/payments/checkout-session", { orderId })),
   updateStatus: (id: string, status: string, logisticsProvider?: string, notes?: string) =>
     unwrap<any>(api.put(`/orders/${id}/status`, { status, logisticsProvider, notes })),

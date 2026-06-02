@@ -23,6 +23,7 @@ import { BuyerProfilePage } from "./pages/BuyerProfilePage";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { AdminApplicationsPage } from "./pages/AdminApplicationsPage";
 import { CheckoutPage } from "./pages/CheckoutPage";
+import { CompletedOrdersPage } from "./pages/CompletedOrdersPage";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,7 @@ export default function App() {
                       <Route path="/admin" element={<ProtectedRoute roles={["ADMIN"]}><AdminDashboard /></ProtectedRoute>} />
                       <Route path="/admin/applications" element={<ProtectedRoute roles={["ADMIN"]}><AdminApplicationsPage /></ProtectedRoute>} />
                       <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+                      <Route path="/completed-orders" element={<ProtectedRoute><CompletedOrdersPage /></ProtectedRoute>} />
                     </Routes>
                   </main>
                   <Footer />

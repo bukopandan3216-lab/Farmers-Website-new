@@ -272,8 +272,16 @@ export function BuyerProfilePage() {
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Order History</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/completed-orders")}
+                className="border-green-500 text-green-700 hover:bg-green-50"
+              >
+                ✓ Completed Orders
+              </Button>
             </CardHeader>
             <CardContent>
               {ordersQuery.isLoading ? (
@@ -396,6 +404,9 @@ export function BuyerProfilePage() {
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         userRole="buyer"
+        onStatusUpdated={() => {
+          ordersQuery.refetch();
+        }}
       />
     </div>
   );

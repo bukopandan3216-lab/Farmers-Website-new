@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -15,7 +15,8 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { OrderDetailsModal } from "../components/OrderDetailsModal";
 import { Star, TrendingUp, Package, ShoppingBag, DollarSign, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
-import { analyticsApi, api, applicationApi, marketplaceApi } from "../services/api";
+import { analyticsApi, api } from "../services/api";
+import { marketplaceApi } from "../services/api";
 import { toast } from "sonner";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -24,10 +25,6 @@ import {
 } from "recharts";
 
 export function FarmerDashboard() {
-  // Prevent unused-import warnings for some analytics icons imported for future use
-  function _markUsed<T>(_val: T) { return; }
-  _markUsed(TrendingUp);
-
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -40,8 +37,9 @@ export function FarmerDashboard() {
     enabled: isAuthenticated && user?.role === 'FARMER',
   });
 
-  // Fetch orders
-  const { isLoading: ordersLoading } = useQuery({
+  // Fetch orders and notify farmer on new pending orders
+  const prevPendingCount = useRef<number | null>(null);
+  const { data: farmerOrders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
       const { api } = await import('../services/api');
@@ -49,7 +47,17 @@ export function FarmerDashboard() {
       return response.data.data || [];
     },
     enabled: isAuthenticated && user?.role === 'FARMER',
+    refetchInterval: 15000, // poll every 15s for new orders
   });
+
+  useEffect(() => {
+    const pendingOrders = farmerOrders.filter((o: any) => o.status === 'PENDING');
+    if (prevPendingCount.current !== null && pendingOrders.length > prevPendingCount.current) {
+      const newCount = pendingOrders.length - prevPendingCount.current;
+      toast(`🛎️ You have ${newCount} new order${newCount > 1 ? 's' : ''}!`, { duration: 5000 });
+    }
+    prevPendingCount.current = pendingOrders.length;
+  }, [farmerOrders]);
 
   // Product modal state
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -62,9 +70,7 @@ export function FarmerDashboard() {
     stock: "",
     organic: false,
     featured: false,
-    images: [] as string[], // existing uploaded image URLs
-    imageFiles: [] as File[], // newly selected files
-    previews: [] as string[], // preview URLs for selected files
+    images: "",
   });
   const [productSubmitting, setProductSubmitting] = useState(false);
 
@@ -88,7 +94,7 @@ export function FarmerDashboard() {
 
   const openAddProduct = () => {
     setEditingProduct(null);
-    setProductForm({ name: "", description: "", categoryId: "", price: "", stock: "", organic: false, featured: false, images: [], imageFiles: [], previews: [] });
+    setProductForm({ name: "", description: "", categoryId: "", price: "", stock: "", organic: false, featured: false, images: "" });
     setIsProductModalOpen(true);
   };
 
@@ -102,9 +108,7 @@ export function FarmerDashboard() {
       stock: String(product.stock || ""),
       organic: product.organic || false,
       featured: product.featured || false,
-      images: product.images || [],
-      imageFiles: [],
-      previews: product.images || [],
+      images: product.images?.[0] || "",
     });
     setIsProductModalOpen(true);
   };
@@ -116,15 +120,6 @@ export function FarmerDashboard() {
     }
     setProductSubmitting(true);
     try {
-      // upload selected files first (if any)
-      const uploadedUrls: string[] = [];
-      for (const file of productForm.imageFiles || []) {
-        const res = await applicationApi.uploadFile('products', file);
-        if (res?.url) uploadedUrls.push(res.url);
-      }
-
-      const finalImages = [...(productForm.images || []), ...uploadedUrls];
-
       const payload = {
         name: productForm.name,
         description: productForm.description,
@@ -133,7 +128,7 @@ export function FarmerDashboard() {
         stock: parseInt(productForm.stock) || 0,
         organic: productForm.organic,
         featured: productForm.featured,
-        images: finalImages,
+        images: productForm.images ? [productForm.images] : [],
       };
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, payload);
@@ -242,7 +237,14 @@ export function FarmerDashboard() {
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="orders">
+              Orders
+              {farmerOrders.filter((o: any) => o.status === 'PENDING').length > 0 && (
+                <span className="ml-1.5 bg-yellow-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                  {farmerOrders.filter((o: any) => o.status === 'PENDING').length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
             <TabsTrigger value="store">Store Info</TabsTrigger>
           </TabsList>
@@ -259,12 +261,12 @@ export function FarmerDashboard() {
                       <Skeleton className="h-16" />
                       <Skeleton className="h-16" />
                     </div>
-                  ) : recentOrders.length > 0 ? (
+                  ) : farmerOrders.length > 0 ? (
                     <div className="space-y-4">
-                      {recentOrders.slice(0, 5).map((order: any) => (
+                      {farmerOrders.slice(0, 5).map((order: any) => (
                         <div
                           key={order.id}
-                          className="flex justify-between items-center border-b border-border pb-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors"
+                          className={`flex justify-between items-center border-b border-border pb-3 cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors ${order.status === 'PENDING' ? 'border-l-4 border-l-yellow-400 bg-yellow-50/50' : ''}`}
                           onClick={() => handleOrderClick(order)}
                         >
                           <div>
@@ -274,8 +276,15 @@ export function FarmerDashboard() {
                           <div className="text-right">
                             <div className="font-medium">₱{Number(order.total || 0).toFixed(2)}</div>
                             <div className="text-sm">
-                              <Badge className={order.status === "DELIVERED" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>
-                                {order.status?.toLowerCase()}
+                              <Badge className={
+                                order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
+                                order.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                order.status === "CONFIRMED" ? "bg-blue-100 text-blue-800" :
+                                order.status === "PREPARING" ? "bg-purple-100 text-purple-800" :
+                                order.status === "OUT_FOR_DELIVERY" ? "bg-orange-100 text-orange-800" :
+                                "bg-gray-100 text-gray-800"
+                              }>
+                                {order.status?.toLowerCase().replaceAll("_", " ")}
                               </Badge>
                             </div>
                           </div>
@@ -434,14 +443,24 @@ export function FarmerDashboard() {
           <TabsContent value="orders" className="mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>All Orders</CardTitle>
+                <div className="flex justify-between items-center">
+                  <CardTitle>All Orders</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate("/completed-orders")}
+                    className="border-green-500 text-green-700 hover:bg-green-50"
+                  >
+                    ✓ View Completed Orders
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {ordersLoading ? (
                   <div className="space-y-3">
                     {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-20" />)}
                   </div>
-                ) : recentOrders.length > 0 ? (
+                ) : farmerOrders.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -454,11 +473,22 @@ export function FarmerDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {recentOrders.map((order: any) => (
-                          <tr key={order.id} className="border-b hover:bg-muted/50 cursor-pointer" onClick={() => handleOrderClick(order)}>
+                        {farmerOrders.map((order: any) => (
+                          <tr key={order.id} className={`border-b hover:bg-muted/50 cursor-pointer ${order.status === 'PENDING' ? 'bg-yellow-50/50' : ''}`} onClick={() => handleOrderClick(order)}>
                             <td className="py-3">{order.id?.slice(0, 8)}</td>
                             <td className="py-3">{order.buyer?.fullName}</td>
-                            <td className="py-3"><Badge className={order.status === "DELIVERED" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}>{order.status?.toLowerCase()}</Badge></td>
+                            <td className="py-3">
+                              <Badge className={
+                                order.status === "DELIVERED" ? "bg-green-100 text-green-800" :
+                                order.status === "PENDING" ? "bg-yellow-100 text-yellow-800" :
+                                order.status === "CONFIRMED" ? "bg-blue-100 text-blue-800" :
+                                order.status === "PREPARING" ? "bg-purple-100 text-purple-800" :
+                                order.status === "OUT_FOR_DELIVERY" ? "bg-orange-100 text-orange-800" :
+                                "bg-gray-100 text-gray-800"
+                              }>
+                                {order.status?.toLowerCase().replaceAll("_", " ")}
+                              </Badge>
+                            </td>
                             <td className="py-3 text-right">₱{Number(order.total || 0).toFixed(2)}</td>
                             <td className="py-3">{new Date(order.createdAt).toLocaleDateString()}</td>
                           </tr>
@@ -580,6 +610,11 @@ export function FarmerDashboard() {
         isOpen={isOrderModalOpen}
         onClose={() => setIsOrderModalOpen(false)}
         order={selectedOrder}
+        userRole="farmer"
+        onStatusUpdated={() => {
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['farmerDashboard'] });
+        }}
       />
 
       {/* Add / Edit Product Modal */}
@@ -655,57 +690,18 @@ export function FarmerDashboard() {
             </div>
 
             <div>
-              <Label htmlFor="prod-images">Product Images</Label>
-              <input
-                id="prod-images"
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  const previews = files.map((f) => URL.createObjectURL(f));
-
-                  // try to auto-suggest category based on filename or existing product name
-                  if (!productForm.categoryId && (productForm.name || files.length > 0)) {
-                    const hintText = (productForm.name + ' ' + files.map(f => f.name).join(' ')).toLowerCase();
-                    const match = categories.find((c: any) => hintText.includes(c.name.toLowerCase()));
-                    if (match) {
-                      setProductForm({ ...productForm, imageFiles: files, previews, categoryId: match.id });
-                      return;
-                    }
-                  }
-
-                  setProductForm({ ...productForm, imageFiles: files, previews });
-                }}
-                className="w-full mt-2"
+              <Label htmlFor="prod-image">Image URL</Label>
+              <Input
+                id="prod-image"
+                placeholder="https://example.com/image.jpg"
+                value={productForm.images}
+                onChange={(e) => setProductForm({ ...productForm, images: e.target.value })}
               />
-
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {(productForm.previews || []).map((p, idx) => (
-                  <div key={p} className="relative h-24 rounded overflow-hidden border">
-                    <img src={p} alt={`preview-${idx}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // remove a selected file/preview
-                        const newFiles = (productForm.imageFiles || []).filter((_, i) => i !== idx);
-                        const newPreviews = (productForm.previews || []).filter((_, i) => i !== idx);
-                        setProductForm({ ...productForm, imageFiles: newFiles, previews: newPreviews });
-                      }}
-                      className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
-                    >
-                      <X className="h-3 w-3 text-red-600" />
-                    </button>
-                  </div>
-                ))}
-
-                {/* show existing uploaded images */}
-                {(productForm.images || []).map((url, i) => (
-                  <div key={url} className="relative h-24 rounded overflow-hidden border">
-                    <img src={url} alt={`uploaded-${i}`} className="w-full h-full object-cover" />
-                  </div>
-                ))}
-              </div>
+              {productForm.images && (
+                <div className="mt-2 h-32 rounded-lg overflow-hidden border">
+                  <img src={productForm.images} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+                </div>
+              )}
             </div>
 
             <div className="flex gap-6">

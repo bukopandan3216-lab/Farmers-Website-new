@@ -103,6 +103,38 @@ router.get('/', authMiddleware, async (req: any, res) => {
   sendSuccess(res, 200, 'Orders fetched successfully', orders);
 });
 
+// Get completed orders (both buyer and farmer see their DELIVERED orders)
+router.get('/completed', authMiddleware, async (req: any, res) => {
+  const where =
+    req.user.role === 'FARMER'
+      ? { status: 'DELIVERED', orderItems: { some: { product: { farmerId: req.user.userId } } } }
+      : req.user.role === 'ADMIN'
+        ? { status: 'DELIVERED' }
+        : { buyerId: req.user.userId, status: 'DELIVERED' };
+
+  const orders = await prisma.order.findMany({
+    where,
+    include: {
+      buyer: { select: { id: true, fullName: true, email: true, avatar: true } },
+      orderItems: {
+        include: {
+          product: {
+            include: {
+              farmer: {
+                select: { id: true, fullName: true, farmerProfile: { select: { farmName: true } } },
+              },
+            },
+          },
+        },
+      },
+      trackingHistory: { orderBy: { updatedAt: 'desc' } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  sendSuccess(res, 200, 'Completed orders fetched successfully', orders);
+});
+
 // Get received orders (buyer only - delivered)
 router.get('/received', authMiddleware, async (req: any, res) => {
   if (req.user.role !== 'BUYER') {

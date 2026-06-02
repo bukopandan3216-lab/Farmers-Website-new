@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+//import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Search, Send, Paperclip, MoreVertical, Trash2, Ban, CheckCheck, Image as ImageIcon } from "lucide-react";
@@ -7,6 +8,7 @@ import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { messageApi } from "../services/api";
+
 
 /* API-driven messaging: conversations are fetched from `messageApi.conversations()` */
 
@@ -72,7 +74,14 @@ function ConversationItem({ conversation, active, onClick }: any) {
 function MessageBubble({ message, isOwn }: any) {
   return (
     <div className={`flex ${isOwn ? "justify-end" : "justify-start"} mb-4`}>
-      <div className={`max-w-[70%] ${isOwn ? "order-2" : "order-1"}`}>
+     <div
+  className={`
+    max-w-[85%]
+    sm:max-w-[80%]
+    md:max-w-[70%]
+    ${isOwn ? "order-2" : "order-1"}
+  `}
+>
         <div
           className={`px-4 py-2 rounded-2xl ${
             isOwn
@@ -99,7 +108,13 @@ function MessageBubble({ message, isOwn }: any) {
 /* ─── MAIN COMPONENT ────────────────────────────────────────── */
 
 export function MessagesPage() {
+  const [showChat, setShowChat] = useState(false);
+
+
   const { user } = useAuth();
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const { otherUserId } = useParams<{ otherUserId?: string }>();
   const queryClient = useQueryClient();
   const [selectedConversation, setSelectedConversation] = useState<any | null>(null);
@@ -153,14 +168,32 @@ export function MessagesPage() {
   });
 
   const messages = conversationQuery.data?.messages ?? selectedConversation?.messages ?? [];
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages]);
+
 
   const sendMutation = useMutation<any, any, string, any>({
     mutationFn: (content: string) => messageApi.send(selectedConversation?.otherUserId, content),
-    onSuccess: () => {
-      queryClient.invalidateQueries(["conversation", selectedConversation?.otherUserId] as any);
-      queryClient.invalidateQueries(["conversations"] as any);
-      setNewMessage("");
-    },
+   onSuccess: () => {
+  queryClient.invalidateQueries({
+    queryKey: ["conversation", selectedConversation?.otherUserId],
+  });
+
+  queryClient.invalidateQueries({
+    queryKey: ["conversations"],
+  });
+
+  setNewMessage("");
+
+  setTimeout(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, 100);
+}
   });
 
   const handleSendMessage = () => {
@@ -176,9 +209,18 @@ export function MessagesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="h-[calc(100vh-80px)] bg-gray-50 flex overflow-hidden">
       {/* Sidebar - Conversations List */}
-      <div className="w-full md:w-96 bg-white border-r border-gray-200 flex flex-col">
+   <div
+  className={`
+    ${showChat ? "hidden md:flex" : "flex"}
+    w-full md:w-96
+    bg-white
+    border-r
+    border-gray-200
+    flex-col
+  `}
+>
         {/* Header */}
         <div className="p-4 border-b border-gray-200">
           <h1 className="text-xl font-bold text-gray-900 mb-3">Messages</h1>
@@ -211,7 +253,11 @@ export function MessagesPage() {
                 key={conv.otherUserId}
                 conversation={conv}
                 active={selectedConversation?.otherUserId === conv.otherUserId}
-                onClick={() => setSelectedConversation(conv)}
+               // onClick={() => setSelectedConversation(conv)}
+               onClick={() => {
+                    setSelectedConversation(conv);
+                     setShowChat(true);
+                      }}
               />
             ))
           )}
@@ -235,12 +281,25 @@ export function MessagesPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col bg-white">
+      <div
+  className={`
+    ${showChat ? "flex" : "hidden md:flex"}
+    flex-1
+    flex-col
+    bg-white
+  `}
+>
         {selectedConversation ? (
           <>
             {/* Chat Header */}
             <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white sticky top-0 z-10">
               <div className="flex items-center gap-3">
+  <button
+    onClick={() => setShowChat(false)}
+    className="md:hidden text-gray-600 mr-1"
+  >
+    ←
+  </button>
                 <div className="relative">
                   <Avatar className="w-10 h-10">
                     <AvatarImage src={selectedConversation.participantPhoto} />
@@ -289,28 +348,37 @@ export function MessagesPage() {
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
-              {messages.map((msg: any) => (
-                <MessageBubble
-                  key={msg.id}
-                  message={msg}
-                  isOwn={msg.senderId === user?.id}
-                />
-              ))}
-              {selectedConversation?.online && (
-                <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
-                  </div>
-                  <span>typing...</span>
-                </div>
-              )}
-            </div>
+           <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-gray-50">
+  {messages.map((msg: any) => (
+    <MessageBubble
+      key={msg.id}
+      message={msg}
+      isOwn={msg.senderId === user?.id}
+    />
+  ))}
+
+  {selectedConversation?.online && (
+    <div className="flex items-center gap-2 text-xs text-gray-400 mb-4">
+      <div className="flex gap-1">
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+        <div
+          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+          style={{ animationDelay: "0.1s" }}
+        />
+        <div
+          className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+          style={{ animationDelay: "0.2s" }}
+        />
+      </div>
+      <span>typing...</span>
+    </div>
+  )}
+
+  <div ref={messagesEndRef} />
+</div>
 
             {/* Message Input */}
-            <div className="p-4 border-t border-gray-200 bg-white">
+           <div className="sticky bottom-0 p-3 md:p-4 border-t border-gray-200 bg-white">
               <div className="flex items-center gap-2">
                 <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
                   <Paperclip className="w-5 h-5 text-gray-600" />
@@ -323,7 +391,12 @@ export function MessagesPage() {
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                 // onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                 onKeyDown={(e) => {
+  if (e.key === "Enter") {
+    handleSendMessage();
+  }
+}}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <Button

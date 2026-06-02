@@ -1,9 +1,11 @@
-import { Resend } from 'resend';
+import * as Brevo from '@getbrevo/brevo';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const apiInstance = new Brevo.TransactionalEmailsApi();
+apiInstance.setApiKey(Brevo.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
-const FROM = process.env.SMTP_FROM || 'FarmDirect <onboarding@resend.dev>';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://farmdirect.com';
+const FROM_EMAIL = 'bukopandan3216@gmail.com';
+const FROM_NAME = 'FarmDirect';
+const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://farmers-website-new.vercel.app').replace(/\/$/, '');
 const TTL_DAYS = parseInt(process.env.REGISTRATION_TOKEN_TTL_DAYS || '30', 10);
 
 export const emailService = {
@@ -21,11 +23,12 @@ export const emailService = {
 
   async sendApprovalEmailWithLink(email: string, fullName: string, role: string, accountCreationLink: string) {
     try {
-      await resend.emails.send({
-        from: FROM,
-        to: email,
-        subject: 'Create Your FarmDirect Account — Application Approved!',
-        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+      const sendSmtpEmail = new Brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = 'Create Your FarmDirect Account — Application Approved!';
+      sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
+      sendSmtpEmail.to = [{ email, name: fullName }];
+      sendSmtpEmail.htmlContent = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
           <div style="background:linear-gradient(135deg,#059669,#047857);color:white;padding:20px;border-radius:8px 8px 0 0">
             <h1>Your Application is Approved! 🎉</h1>
           </div>
@@ -45,8 +48,13 @@ export const emailService = {
             <p><strong>⚠️ This link expires in ${TTL_DAYS} days.</strong></p>
             <p>Best regards,<br><strong>The FarmDirect Team</strong></p>
           </div>
-        </div>`,
-      });
+          <div style="background:#f3f4f6;padding:15px;text-align:center;font-size:12px;color:#6b7280">
+            <p>&copy; ${new Date().getFullYear()} FarmDirect. All rights reserved.</p>
+          </div>
+        </div>`;
+
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('✅ Approval email sent to:', email);
       return true;
     } catch (error) {
       console.error('Error sending approval email:', error);
@@ -56,12 +64,14 @@ export const emailService = {
 
   async sendApprovalEmail(email: string, fullName: string, role: string) {
     try {
-      await resend.emails.send({
-        from: FROM,
-        to: email,
-        subject: 'Your FarmDirect Account Has Been Approved!',
-        html: `<p>Dear ${fullName}, your ${role} account has been approved! <a href="${FRONTEND_URL}/login">Login here</a>.</p>`,
-      });
+      const sendSmtpEmail = new Brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = 'Your FarmDirect Account Has Been Approved!';
+      sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
+      sendSmtpEmail.to = [{ email, name: fullName }];
+      sendSmtpEmail.htmlContent = `<p>Dear ${fullName}, your ${role} account has been approved! <a href="${FRONTEND_URL}/login">Login here</a>.</p>`;
+
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('✅ Approval email sent to:', email);
       return true;
     } catch (error) {
       console.error('Error sending approval email:', error);
@@ -71,11 +81,12 @@ export const emailService = {
 
   async sendRejectionEmail(email: string, fullName: string, rejectionReason: string) {
     try {
-      await resend.emails.send({
-        from: FROM,
-        to: email,
-        subject: 'FarmDirect Application Status Update',
-        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+      const sendSmtpEmail = new Brevo.SendSmtpEmail();
+      sendSmtpEmail.subject = 'FarmDirect Application Status Update';
+      sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
+      sendSmtpEmail.to = [{ email, name: fullName }];
+      sendSmtpEmail.htmlContent = `
+        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
           <div style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:white;padding:20px;border-radius:8px 8px 0 0">
             <h1>Application Status Update</h1>
           </div>
@@ -88,8 +99,13 @@ export const emailService = {
             <p>Questions? Contact us at <strong>support@farmdirect.com</strong>.</p>
             <p>Best regards,<br><strong>The FarmDirect Team</strong></p>
           </div>
-        </div>`,
-      });
+          <div style="background:#f3f4f6;padding:15px;text-align:center;font-size:12px;color:#6b7280">
+            <p>&copy; ${new Date().getFullYear()} FarmDirect. All rights reserved.</p>
+          </div>
+        </div>`;
+
+      await apiInstance.sendTransacEmail(sendSmtpEmail);
+      console.log('✅ Rejection email sent to:', email);
       return true;
     } catch (error) {
       console.error('Error sending rejection email:', error);
@@ -108,6 +124,6 @@ export const emailService = {
   },
 
   async testConnection() {
-    return !!process.env.RESEND_API_KEY;
+    return !!process.env.BREVO_API_KEY;
   },
 };

@@ -200,23 +200,27 @@ router.delete('/:id/follow', authMiddleware, async (req: any, res) => {
 
 // Update farmer profile
 router.put('/me/profile', authMiddleware, roleMiddleware(['FARMER']), async (req: any, res) => {
-  const profile = await prisma.farmerProfile.upsert({
-    where: { userId: req.user.userId },
-    create: {
-      userId: req.user.userId,
-      farmName: req.body.farmName,
-      farmDescription: req.body.farmDescription,
-      farmLocation: req.body.farmLocation,
-      coverImage: req.body.coverImage,
+  const {
+    fullName,
+    contact,
+    address,
+    city,
+    province,
+  } = req.body;
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: req.user.userId,
     },
-    update: {
-      farmName: req.body.farmName,
-      farmDescription: req.body.farmDescription,
-      farmLocation: req.body.farmLocation,
-      coverImage: req.body.coverImage,
+    data: {
+      fullName,
+      contact,
+      address,
+      city,
+      province,
     },
   });
-  sendSuccess(res, 200, 'Farm profile saved successfully', profile);
+  sendSuccess(res, 200, 'Farm profile saved successfully', updatedUser);
 });
 
 export default router;

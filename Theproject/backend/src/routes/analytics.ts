@@ -104,7 +104,23 @@ router.get('/buyer/dashboard', authMiddleware, roleMiddleware(['BUYER']), async 
 
     // Get user data
     const user = await prisma.user.findUnique({
-      where: { id: userId },
+      //where: { id: userId },
+       where: {
+      id: req.user.userId,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      username: true,
+      contact: true,
+      address: true,
+      city: true,
+      province: true,
+      role: true,
+      status: true,
+      createdAt: true,
+    },
     });
 
     if (!user) {

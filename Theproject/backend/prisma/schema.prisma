@@ -18,7 +18,12 @@ model User {
   passwordHash String
   avatar    String?
   phone     String?
+  
   address   String?
+  contact   String?
+  city      String?
+  province  String?
+
   role      Role     @default(BUYER)
   accountSetupCompleted Boolean @default(false)
   totalSpent Decimal @default(0) @db.Decimal(10, 2)

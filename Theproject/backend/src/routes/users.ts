@@ -4,6 +4,8 @@ import { authMiddleware, roleMiddleware } from '../middleware/auth.js';
 import { hashPassword, comparePasswords } from '../utils/password.js';
 import { sendError, sendSuccess } from '../utils/response.js';
 
+import bcrypt from 'bcryptjs';
+
 const router = express.Router();
 
 // Get all users (admin only)
@@ -153,17 +155,62 @@ router.get('/me/farmer-analytics', authMiddleware, async (req: any, res) => {
 
 // Update user profile
 router.put('/me', authMiddleware, async (req: any, res) => {
-  const user = await prisma.user.update({
-    where: { id: req.user.userId },
-    data: {
-      fullName: req.body.fullName,
-      avatar: req.body.avatar,
-      phone: req.body.phone,
-      address: req.body.address,
+//  const user = await prisma.user.update({
+  //  where: { id: req.user.userId },
+  //  data: {
+   //   fullName: req.body.fullName,
+  //    avatar: req.body.avatar,
+   //   phone: req.body.phone,
+   //   address: req.body.address,
+ //   },
+ //   select: { id: true, fullName: true, email: true, role: true, avatar: true, phone: true, address: true },
+ // });
+  //sendSuccess(res, 200, 'Profile updated successfully', user);
+
+  // If user is a farmer, also update their profile
+   const {
+    currentPassword,
+    newPassword,
+  } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: req.user.userId,
     },
-    select: { id: true, fullName: true, email: true, role: true, avatar: true, phone: true, address: true },
   });
-  sendSuccess(res, 200, 'Profile updated successfully', user);
+
+  if (!user) {
+    return sendError(res, 404, 'User not found');
+  }
+
+  const isValid = await bcrypt.compare(
+    currentPassword,
+   user.passwordHash
+  );
+
+  if (!isValid) {
+    return sendError(res, 400, 'Current password is incorrect');
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
+    10
+  );
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      passwordHash: hashedPassword,
+    },
+  });
+
+  return sendSuccess(
+    res,
+    200,
+    'Password changed successfully'
+  );
 });
 
 // Change password

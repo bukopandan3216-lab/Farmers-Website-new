@@ -3,6 +3,7 @@ import prisma from '../config/database.js';
 import { authMiddleware, roleMiddleware } from '../middleware/auth.js';
 import { sendError, sendSuccess } from '../utils/response.js';
 
+
 import { OrderStatus } from '@prisma/client';
 
 const router = express.Router();
@@ -37,7 +38,7 @@ router.post('/', authMiddleware, async (req: any, res) => {
         buyerId: req.user.userId,
         total,
         deliveryAddress,
-        status: 'PENDING',
+        status: OrderStatus.PENDING,
         orderItems: {
           create: items.map((item: any) => {
             const product = products.find((candidate) => candidate.id === item.productId)!;
@@ -107,10 +108,10 @@ router.get('/', authMiddleware, async (req: any, res) => {
 router.get('/completed', authMiddleware, async (req: any, res) => {
   const where =
     req.user.role === 'FARMER'
-      ? { status: 'DELIVERED', orderItems: { some: { product: { farmerId: req.user.userId } } } }
+      ? { status: OrderStatus.DELIVERED, orderItems: { some: { product: { farmerId: req.user.userId } } } }
       : req.user.role === 'ADMIN'
-        ? { status: 'DELIVERED' }
-        : { buyerId: req.user.userId, status: 'DELIVERED' };
+        ? { status: OrderStatus.DELIVERED }
+        : { buyerId: req.user.userId, status: OrderStatus.DELIVERED };
 
   const orders = await prisma.order.findMany({
     where,
@@ -144,7 +145,7 @@ router.get('/received', authMiddleware, async (req: any, res) => {
   const orders = await prisma.order.findMany({
     where: {
       buyerId: req.user.userId,
-      status: 'DELIVERED',
+      status: OrderStatus.DELIVERED,
     },
     include: {
       buyer: { select: { id: true, fullName: true, email: true, avatar: true } },

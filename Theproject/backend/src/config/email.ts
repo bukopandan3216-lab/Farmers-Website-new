@@ -1,7 +1,7 @@
-import SibApiV3Sdk from '@getbrevo/brevo';
+import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys, SendSmtpEmail } from '@getbrevo/brevo';
 
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-apiInstance.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
+const apiInstance = new TransactionalEmailsApi();
+apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
 
 const FROM_EMAIL = 'bukopandan3216@gmail.com';
 const FROM_NAME = 'FarmDirect';
@@ -23,7 +23,7 @@ export const emailService = {
 
   async sendApprovalEmailWithLink(email: string, fullName: string, role: string, accountCreationLink: string) {
     try {
-      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+      const sendSmtpEmail = new SendSmtpEmail();
       sendSmtpEmail.subject = 'Create Your FarmDirect Account - Application Approved!';
       sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
       sendSmtpEmail.to = [{ email, name: fullName }];
@@ -39,7 +39,7 @@ export const emailService = {
 
   async sendApprovalEmail(email: string, fullName: string, role: string) {
     try {
-      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+      const sendSmtpEmail = new SendSmtpEmail();
       sendSmtpEmail.subject = 'Your FarmDirect Account Has Been Approved!';
       sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
       sendSmtpEmail.to = [{ email, name: fullName }];
@@ -54,7 +54,7 @@ export const emailService = {
 
   async sendRejectionEmail(email: string, fullName: string, rejectionReason: string) {
     try {
-      const sendSmtpEmail = new SibApiV3Sdk.SendSmtpEmail();
+      const sendSmtpEmail = new SendSmtpEmail();
       sendSmtpEmail.subject = 'FarmDirect Application Status Update';
       sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
       sendSmtpEmail.to = [{ email, name: fullName }];

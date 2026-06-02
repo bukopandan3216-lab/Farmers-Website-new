@@ -1,12 +1,37 @@
-import { TransactionalEmailsApi, TransactionalEmailsApiApiKeys, SendSmtpEmail } from '@getbrevo/brevo';
-
-const apiInstance = new TransactionalEmailsApi();
-apiInstance.setApiKey(TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY || '');
-
+const BREVO_API_KEY = process.env.BREVO_API_KEY || '';
 const FROM_EMAIL = 'bukopandan3216@gmail.com';
 const FROM_NAME = 'FarmDirect';
 const FRONTEND_URL = (process.env.FRONTEND_URL || 'https://farmers-website-new.vercel.app').replace(/\/$/, '');
 const TTL_DAYS = parseInt(process.env.REGISTRATION_TOKEN_TTL_DAYS || '30', 10);
+
+async function sendEmail(to: string, toName: string, subject: string, html: string): Promise<boolean> {
+  try {
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: FROM_NAME, email: FROM_EMAIL },
+        to: [{ email: to, name: toName }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.text();
+      console.error('Brevo error:', err);
+      return false;
+    }
+    console.log('Email sent to:', to);
+    return true;
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return false;
+  }
+}
 
 export const emailService = {
 
@@ -22,49 +47,18 @@ export const emailService = {
   },
 
   async sendApprovalEmailWithLink(email: string, fullName: string, role: string, accountCreationLink: string) {
-    try {
-      const sendSmtpEmail = new SendSmtpEmail();
-      sendSmtpEmail.subject = 'Create Your FarmDirect Account - Application Approved!';
-      sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
-      sendSmtpEmail.to = [{ email, name: fullName }];
-      sendSmtpEmail.htmlContent = '<p>Dear ' + fullName + ', your application is approved! <a href="' + accountCreationLink + '">Create your account here</a>. Link expires in ' + TTL_DAYS + ' days.</p>';
-      await apiInstance.sendTransacEmail(sendSmtpEmail);
-      console.log('Email sent to:', email);
-      return true;
-    } catch (error) {
-      console.error('Error sending approval email:', error);
-      return false;
-    }
+    const html = '<p>Dear ' + fullName + ', your ' + (role === 'FARMER' ? 'Farmer/Seller' : 'Buyer') + ' application has been APPROVED!</p><p><a href="' + accountCreationLink + '">Click here to create your account</a></p><p>Link expires in ' + TTL_DAYS + ' days.</p>';
+    return sendEmail(email, fullName, 'Create Your FarmDirect Account - Application Approved!', html);
   },
 
   async sendApprovalEmail(email: string, fullName: string, role: string) {
-    try {
-      const sendSmtpEmail = new SendSmtpEmail();
-      sendSmtpEmail.subject = 'Your FarmDirect Account Has Been Approved!';
-      sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
-      sendSmtpEmail.to = [{ email, name: fullName }];
-      sendSmtpEmail.htmlContent = '<p>Dear ' + fullName + ', your account has been approved! <a href="' + FRONTEND_URL + '/login">Login here</a>.</p>';
-      await apiInstance.sendTransacEmail(sendSmtpEmail);
-      return true;
-    } catch (error) {
-      console.error('Error sending approval email:', error);
-      return false;
-    }
+    const html = '<p>Dear ' + fullName + ', your account has been approved! <a href="' + FRONTEND_URL + '/login">Login here</a>.</p>';
+    return sendEmail(email, fullName, 'Your FarmDirect Account Has Been Approved!', html);
   },
 
   async sendRejectionEmail(email: string, fullName: string, rejectionReason: string) {
-    try {
-      const sendSmtpEmail = new SendSmtpEmail();
-      sendSmtpEmail.subject = 'FarmDirect Application Status Update';
-      sendSmtpEmail.sender = { name: FROM_NAME, email: FROM_EMAIL };
-      sendSmtpEmail.to = [{ email, name: fullName }];
-      sendSmtpEmail.htmlContent = '<p>Dear ' + fullName + ', your application has been rejected. Reason: ' + rejectionReason + '</p>';
-      await apiInstance.sendTransacEmail(sendSmtpEmail);
-      return true;
-    } catch (error) {
-      console.error('Error sending rejection email:', error);
-      return false;
-    }
+    const html = '<p>Dear ' + fullName + ', your application has been rejected.</p><p>Reason: ' + rejectionReason + '</p>';
+    return sendEmail(email, fullName, 'FarmDirect Application Status Update', html);
   },
 
   async sendSmsNotification(phone: string, fullName: string, role: string) {
@@ -78,6 +72,6 @@ export const emailService = {
   },
 
   async testConnection() {
-    return !!process.env.BREVO_API_KEY;
+    return !!BREVO_API_KEY;
   },
 };

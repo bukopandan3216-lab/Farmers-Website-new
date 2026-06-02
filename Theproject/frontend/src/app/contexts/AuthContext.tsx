@@ -62,8 +62,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const restoreAuth = async () => {
       const token = localStorage.getItem("fd_token");
+      const refreshToken = localStorage.getItem("fd_refresh_token");
 
+      // If there's no token, nothing to restore
       if (!token) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+      // If token exists but no refresh token, it's likely expired — clear and skip calling the API
+      if (!refreshToken) {
+        localStorage.removeItem("fd_token");
         setUser(null);
         setIsLoading(false);
         return;

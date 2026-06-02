@@ -18,14 +18,18 @@ export const ApplyPage: React.FC = () => {
     address: '',
     notificationPreference: 'EMAIL',
     profileImage: null as File | null,
+    profileImagePreview: '' as string | null,
     // Farmer specific
     farmName: '',
     farmAddress: '',
     description: '',
     commissionFrequency: 'MONTHLY',
     validId: null as File | null,
+    validIdPreview: '' as string | null,
     photoWithId: null as File | null,
+    photoWithIdPreview: '' as string | null,
     businessPermit: null as File | null,
+    businessPermitPreview: '' as string | null,
   });
 
   const handleRoleSelect = (selectedRole: 'BUYER' | 'FARMER') => {
@@ -45,10 +49,12 @@ export const ApplyPage: React.FC = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
     const file = e.target.files?.[0];
     if (file) {
+      const preview = file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
       setFormData((prev) => ({
         ...prev,
         [fieldName]: file,
-      }));
+        [`${fieldName}Preview`]: preview,
+      } as any));
     }
   };
 
@@ -324,6 +330,11 @@ export const ApplyPage: React.FC = () => {
                         onChange={(e) => handleFileChange(e, 'profileImage')}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                       />
+                      {formData.profileImagePreview && (
+                        <div className="mt-2 h-32 rounded overflow-hidden border">
+                          <img src={formData.profileImagePreview as string} alt="profile-preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -461,6 +472,11 @@ export const ApplyPage: React.FC = () => {
                       {formData.photoWithId && (
                         <p className="mt-2 text-sm text-emerald-600">✓ {formData.photoWithId.name}</p>
                       )}
+                      {formData.photoWithIdPreview && (
+                        <div className="mt-2 h-36 rounded overflow-hidden border">
+                          <img src={formData.photoWithIdPreview as string} alt="photo-with-id-preview" className="w-full h-full object-cover" />
+                        </div>
+                      )}
                     </div>
 
                     <div>
@@ -488,6 +504,11 @@ export const ApplyPage: React.FC = () => {
                       </div>
                       {formData.businessPermit && (
                         <p className="mt-2 text-sm text-emerald-600">✓ {formData.businessPermit.name}</p>
+                      )}
+                      {formData.businessPermitPreview && (
+                        <div className="mt-2 h-36 rounded overflow-hidden border">
+                          <img src={formData.businessPermitPreview as string} alt="business-permit-preview" className="w-full h-full object-cover" />
+                        </div>
                       )}
                     </div>
                   </div>

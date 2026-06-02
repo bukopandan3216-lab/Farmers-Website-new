@@ -14,7 +14,15 @@ export const productController = {
       const farmerId = req.query.farmerId as string;
 
       const result = await productService.getAll(skip, take, categoryId, search, farmerId);
-      sendSuccess(res, 200, 'Products fetched successfully', result);
+
+      // Ensure image URLs are absolute so frontend doesn't need to rewrite them.
+      const apiOrigin = `${req.protocol}://${req.get('host')}`;
+      const products = result.products.map((p: any) => ({
+        ...p,
+        images: (p.images || []).map((img: string) => (typeof img === 'string' && img.startsWith('/uploads') ? `${apiOrigin}${img}` : img)),
+      }));
+
+      sendSuccess(res, 200, 'Products fetched successfully', { ...result, products });
     } catch (error: any) {
       sendError(res, 500, 'Failed to fetch products');
     }
@@ -24,7 +32,13 @@ export const productController = {
     try {
       const { id } = req.params;
       const product = await productService.getById(id);
-      sendSuccess(res, 200, 'Product fetched successfully', product);
+      const apiOrigin = `${req.protocol}://${req.get('host')}`;
+      const mapped = {
+        ...product,
+        images: (product.images || []).map((img: string) => (typeof img === 'string' && img.startsWith('/uploads') ? `${apiOrigin}${img}` : img)),
+      };
+
+      sendSuccess(res, 200, 'Product fetched successfully', mapped);
     } catch (error: any) {
       if (error.statusCode) {
         sendError(res, error.statusCode, error.message);
@@ -37,7 +51,13 @@ export const productController = {
   async getFeatured(req: AuthRequest, res: Response) {
     try {
       const products = await productService.getFeatured();
-      sendSuccess(res, 200, 'Featured products fetched successfully', products);
+      const apiOrigin = `${req.protocol}://${req.get('host')}`;
+      const mapped = products.map((p: any) => ({
+        ...p,
+        images: (p.images || []).map((img: string) => (typeof img === 'string' && img.startsWith('/uploads') ? `${apiOrigin}${img}` : img)),
+      }));
+
+      sendSuccess(res, 200, 'Featured products fetched successfully', mapped);
     } catch (error: any) {
       console.error('getFeatured error:', error); // ADD THIS LINE
       sendError(res, 500, 'Failed to fetch featured products');
@@ -67,7 +87,13 @@ export const productController = {
         images: images || [],
       });
 
-      sendSuccess(res, 201, 'Product created successfully', product);
+      const apiOrigin = `${req.protocol}://${req.get('host')}`;
+      const mapped = {
+        ...product,
+        images: (product.images || []).map((img: string) => (typeof img === 'string' && img.startsWith('/uploads') ? `${apiOrigin}${img}` : img)),
+      };
+
+      sendSuccess(res, 201, 'Product created successfully', mapped);
     } catch (error: any) {
       if (error.statusCode) {
         sendError(res, error.statusCode, error.message);

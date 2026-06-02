@@ -40,6 +40,23 @@ router.post('/:bucket', upload.single('file'), async (req: Request & { file?: an
 
       if (error) {
         console.error('SUPABASE STORAGE ERROR:', error);
+
+        // If the bucket does not exist in Supabase, fall back to local storage
+        // This allows development environments to work even if buckets aren't created.
+        const bucketNotFound = String(error.message || '').toLowerCase().includes('bucket');
+        if (bucketNotFound) {
+          console.warn(`Supabase bucket "${bucket}" not found — falling back to local storage`);
+          // create local bucket path and write file
+          const bucketPath = path.join(uploadsBasePath, bucket);
+          if (!fs.existsSync(bucketPath)) {
+            fs.mkdirSync(bucketPath, { recursive: true });
+          }
+          const localFilePath = path.join(bucketPath, fileName);
+          fs.writeFileSync(localFilePath, req.file.buffer);
+          const publicUrl = `/uploads/${bucket}/${fileName}`;
+          return sendSuccess(res, 201, 'File uploaded successfully (local fallback)', { path: fileName, url: publicUrl });
+        }
+
         return sendError(res, 400, error.message);
       }
 

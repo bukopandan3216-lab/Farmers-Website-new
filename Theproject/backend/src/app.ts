@@ -33,7 +33,16 @@ export const createApp = (): Express => {
   const app = express();
 
   // Middleware
-  app.use(helmet());
+  // Configure helmet to allow cross-origin resource loading for static uploads
+  app.use(
+    helmet({
+      // Allow images and other resources to be fetched from this origin by browsers
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      // Disable embedder policy which can block cross-origin fetching in some setups
+      crossOriginEmbedderPolicy: false,
+      // Keep opener policy default; fine for development
+    })
+  );
   app.use(morgan('combined'));
   app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
   

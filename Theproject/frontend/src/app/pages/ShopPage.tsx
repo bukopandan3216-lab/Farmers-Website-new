@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
 import { Skeleton } from "../components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+// Using a simple custom tab bar instead of Radix Tabs for category selection
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { ProductCard } from "../components/ProductCard";
 import { ProductDetailModal } from "../components/ProductDetailModal";
@@ -69,24 +69,29 @@ export function ShopPage() {
           </Link>
         </div>
 
-        {/* Category Tabs */}
-        <Tabs value={selectedCategory} onValueChange={setSelectedCategory} className="mb-8">
-          <TabsList className="bg-muted text-muted-foreground h-9 items-center rounded-xl p-[3px] flex w-full justify-start overflow-x-auto">
-            <TabsTrigger value="all" className="data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
-              All Products
-            </TabsTrigger>
-            {categoriesQuery.data?.map((category) => (
-              <TabsTrigger
-                key={category.id}
-                value={category.name.toLowerCase()}
-                className="data-[state=active]:bg-card dark:data-[state=active]:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:outline-ring dark:data-[state=active]:border-input dark:data-[state=active]:bg-input/30 text-foreground dark:text-muted-foreground inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow] focus-visible:ring-[3px] focus-visible:outline-1 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4">
-                {category.name}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-          
+        {/* Category Tabs (custom) */}
+        <div className="mb-8">
+          <div className="bg-muted text-muted-foreground h-9 items-center rounded-xl p-[3px] flex w-full justify-start overflow-x-auto">
+            <div className="category-tabs flex w-full">
+              <button
+                className={`tab-btn inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap ${selectedCategory === 'all' ? 'bg-card' : ''}`}
+                onClick={() => setSelectedCategory('all')}
+              >
+                All Products
+              </button>
+              {categoriesQuery.data?.map((category) => (
+                <button
+                  key={category.id}
+                  className={`tab-btn inline-flex h-[calc(100%-1px)] flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap ${selectedCategory === category.name.toLowerCase() ? 'bg-card' : ''}`}
+                  onClick={() => setSelectedCategory(category.name.toLowerCase())}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
 
-          <TabsContent value={selectedCategory} className="mt-8">
+          <div className="mt-8">
             {productsQuery.isLoading ? (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {[...Array(8)].map((_, i) => <ProductSkeleton key={i} />)}
@@ -125,8 +130,8 @@ export function ShopPage() {
                 <p className="text-gray-500">Try adjusting your search or filters</p>
               </Card>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
 
         <ProductDetailModal
           isOpen={isProductModalOpen}

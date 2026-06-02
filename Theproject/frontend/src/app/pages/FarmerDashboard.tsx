@@ -15,8 +15,7 @@ import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { OrderDetailsModal } from "../components/OrderDetailsModal";
 import { Star, TrendingUp, Package, ShoppingBag, DollarSign, Plus, Pencil, Trash2, X } from "lucide-react";
 import { Skeleton } from "../components/ui/skeleton";
-import { analyticsApi, api } from "../services/api";
-import { marketplaceApi } from "../services/api";
+import { analyticsApi, api, applicationApi, marketplaceApi } from "../services/api";
 import { toast } from "sonner";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -25,6 +24,10 @@ import {
 } from "recharts";
 
 export function FarmerDashboard() {
+  // Prevent unused-import warnings for some analytics icons imported for future use
+  function _markUsed<T>(_val: T) { return; }
+  _markUsed(TrendingUp);
+
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
@@ -59,7 +62,9 @@ export function FarmerDashboard() {
     stock: "",
     organic: false,
     featured: false,
-    images: "",
+    images: [] as string[], // existing uploaded image URLs
+    imageFiles: [] as File[], // newly selected files
+    previews: [] as string[], // preview URLs for selected files
   });
   const [productSubmitting, setProductSubmitting] = useState(false);
 
@@ -83,7 +88,7 @@ export function FarmerDashboard() {
 
   const openAddProduct = () => {
     setEditingProduct(null);
-    setProductForm({ name: "", description: "", categoryId: "", price: "", stock: "", organic: false, featured: false, images: "" });
+    setProductForm({ name: "", description: "", categoryId: "", price: "", stock: "", organic: false, featured: false, images: [], imageFiles: [], previews: [] });
     setIsProductModalOpen(true);
   };
 
@@ -97,7 +102,9 @@ export function FarmerDashboard() {
       stock: String(product.stock || ""),
       organic: product.organic || false,
       featured: product.featured || false,
-      images: product.images?.[0] || "",
+      images: product.images || [],
+      imageFiles: [],
+      previews: product.images || [],
     });
     setIsProductModalOpen(true);
   };
@@ -109,6 +116,15 @@ export function FarmerDashboard() {
     }
     setProductSubmitting(true);
     try {
+      // upload selected files first (if any)
+      const uploadedUrls: string[] = [];
+      for (const file of productForm.imageFiles || []) {
+        const res = await applicationApi.uploadFile('products', file);
+        if (res?.url) uploadedUrls.push(res.url);
+      }
+
+      const finalImages = [...(productForm.images || []), ...uploadedUrls];
+
       const payload = {
         name: productForm.name,
         description: productForm.description,
@@ -117,7 +133,7 @@ export function FarmerDashboard() {
         stock: parseInt(productForm.stock) || 0,
         organic: productForm.organic,
         featured: productForm.featured,
-        images: productForm.images ? [productForm.images] : [],
+        images: finalImages,
       };
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, payload);
@@ -639,18 +655,57 @@ export function FarmerDashboard() {
             </div>
 
             <div>
-              <Label htmlFor="prod-image">Image URL</Label>
-              <Input
-                id="prod-image"
-                placeholder="https://example.com/image.jpg"
-                value={productForm.images}
-                onChange={(e) => setProductForm({ ...productForm, images: e.target.value })}
+              <Label htmlFor="prod-images">Product Images</Label>
+              <input
+                id="prod-images"
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  const previews = files.map((f) => URL.createObjectURL(f));
+
+                  // try to auto-suggest category based on filename or existing product name
+                  if (!productForm.categoryId && (productForm.name || files.length > 0)) {
+                    const hintText = (productForm.name + ' ' + files.map(f => f.name).join(' ')).toLowerCase();
+                    const match = categories.find((c: any) => hintText.includes(c.name.toLowerCase()));
+                    if (match) {
+                      setProductForm({ ...productForm, imageFiles: files, previews, categoryId: match.id });
+                      return;
+                    }
+                  }
+
+                  setProductForm({ ...productForm, imageFiles: files, previews });
+                }}
+                className="w-full mt-2"
               />
-              {productForm.images && (
-                <div className="mt-2 h-32 rounded-lg overflow-hidden border">
-                  <img src={productForm.images} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
-                </div>
-              )}
+
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {(productForm.previews || []).map((p, idx) => (
+                  <div key={p} className="relative h-24 rounded overflow-hidden border">
+                    <img src={p} alt={`preview-${idx}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // remove a selected file/preview
+                        const newFiles = (productForm.imageFiles || []).filter((_, i) => i !== idx);
+                        const newPreviews = (productForm.previews || []).filter((_, i) => i !== idx);
+                        setProductForm({ ...productForm, imageFiles: newFiles, previews: newPreviews });
+                      }}
+                      className="absolute top-1 right-1 bg-white rounded-full p-1 shadow"
+                    >
+                      <X className="h-3 w-3 text-red-600" />
+                    </button>
+                  </div>
+                ))}
+
+                {/* show existing uploaded images */}
+                {(productForm.images || []).map((url, i) => (
+                  <div key={url} className="relative h-24 rounded overflow-hidden border">
+                    <img src={url} alt={`uploaded-${i}`} className="w-full h-full object-cover" />
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-6">

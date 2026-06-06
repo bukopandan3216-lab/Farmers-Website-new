@@ -70,8 +70,8 @@ export function FarmerDashboard() {
     stock: "",
     organic: false,
     featured: false,
-   // images: "",
-   images: [] as string[],
+    //images: "",
+  images: [] as string[], 
   });
  // const [productSubmitting, setProductSubmitting] = useState(false);
  const [productSubmitting, setProductSubmitting] = useState(false);
@@ -126,7 +126,10 @@ setProductImageFiles([]);
       stock: String(product.stock || ""),
       organic: product.organic || false,
       featured: product.featured || false,
-      images: product.images?.[0] || "",
+      //images: product.images?.[0] || "",
+      images: Array.isArray(product.images)
+  ? product.images
+  : [],
       
     });
      setProductImageFiles([]);
@@ -765,7 +768,8 @@ productImageFiles.forEach(file => {
   }}
 />
 
-  {productForm.images.length > 0 && (
+
+ {productForm.images.length > 0 && (
   <div className="mt-2 flex gap-2 overflow-x-auto">
     {productForm.images.map((img, index) => (
       <img
@@ -776,7 +780,19 @@ productImageFiles.forEach(file => {
       />
     ))}
   </div>
-)}
+)} 
+
+
+{/*
+{productForm.images && (
+  <div className="mt-2 h-32 rounded-lg overflow-hidden border">
+    <img
+      src={productForm.images}
+      alt="Preview"
+      className="w-full h-full object-cover"
+    />
+  </div>
+)} */}
 
 
 </div>
@@ -816,7 +832,12 @@ productImageFiles.forEach(file => {
   disabled={productSubmitting}
   className="bg-emerald-600 hover:bg-emerald-700"
 >
-              {productImageFiles ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}
+  {productSubmitting
+  ? "Saving..."
+  : editingProduct
+  ? "Save Changes"
+  : "Add Product"}
+             {/* {productImageFiles ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"} */}
              {productSubmitting
   ? "Saving..."
   : editingProduct

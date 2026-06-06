@@ -70,12 +70,14 @@ export function FarmerDashboard() {
     stock: "",
     organic: false,
     featured: false,
-    images: "",
+   // images: "",
+   images: [] as string[],
   });
  // const [productSubmitting, setProductSubmitting] = useState(false);
- //const [productImageFile, setProductImageFile] = useState<File | null>(null);
  const [productSubmitting, setProductSubmitting] = useState(false);
-const [productImageFile, setProductImageFile] = useState<File | null>(null);
+//const [productImageFile, setProductImageFile] = useState<File | null>(null);
+const [productImageFiles, setProductImageFiles] =
+  useState<File[]>([]);
 
   const queryClient = useQueryClient();
 
@@ -106,10 +108,11 @@ const [productImageFile, setProductImageFile] = useState<File | null>(null);
   stock: "",
   organic: false,
   featured: false,
-  images: "",
+  //images: "",
+  images: [] as string[],
 });
 
-setProductImageFile(null);
+setProductImageFiles([]);
     setIsProductModalOpen(true);
   };
 
@@ -126,8 +129,8 @@ setProductImageFile(null);
       images: product.images?.[0] || "",
       
     });
-     setProductImageFile(null);
-     
+     setProductImageFiles([]);
+
     setIsProductModalOpen(true);
   };
 
@@ -164,12 +167,9 @@ formData.append(
   String(productForm.organic)
 );
 
-if (productImageFile) {
-  formData.append(
-    "image",
-    productImageFile
-  );
-}
+productImageFiles.forEach(file => {
+  formData.append("images", file);
+});
       if (editingProduct) {
         await api.put(`/products/${editingProduct.id}`, formData);
         toast.success("Product updated successfully!");
@@ -746,32 +746,39 @@ if (productImageFile) {
   <Label htmlFor="prod-image">Product Image</Label>
 
 <Input
-  id="prod-image"
   type="file"
   accept="image/*"
+  multiple
   onChange={(e) => {
-    const file = e.target.files?.[0];
+    const files = Array.from(
+      e.target.files || []
+    );
 
-    if (!file) return;
-
-    setProductImageFile(file);
+    setProductImageFiles(files);
 
     setProductForm({
       ...productForm,
-      images: URL.createObjectURL(file),
+      images: files.map(file =>
+        URL.createObjectURL(file)
+      ),
     });
   }}
 />
 
-  {productForm.images && (
-    <div className="mt-2 h-32 rounded-lg overflow-hidden border">
+  {productForm.images.length > 0 && (
+  <div className="mt-2 flex gap-2 overflow-x-auto">
+    {productForm.images.map((img, index) => (
       <img
-        src={productForm.images}
-        alt="Preview"
-        className="w-full h-full object-cover"
+        key={index}
+        src={img}
+        alt={`Preview ${index}`}
+        className="h-24 w-24 object-cover rounded border"
       />
-    </div>
-  )}
+    ))}
+  </div>
+)}
+
+
 </div>
 
             <div className="flex gap-6">
@@ -809,7 +816,7 @@ if (productImageFile) {
   disabled={productSubmitting}
   className="bg-emerald-600 hover:bg-emerald-700"
 >
-              {productImageFile ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}
+              {productImageFiles ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}
              {productSubmitting
   ? "Saving..."
   : editingProduct

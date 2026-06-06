@@ -86,13 +86,12 @@ export const productController = {
       if (!name || !categoryId || !price) {
         return sendError(res, 400, 'Missing required fields');
       }
+let images: string[] = [];
 
-      let images: string[] = [];
-
-if (req.file) {
-  images = [
-    `/uploads/products/${req.file.filename}`
-  ];
+if (req.files && Array.isArray(req.files)) {
+  images = req.files.map(
+    (file) => `/uploads/products/${file.filename}`
+  );
 }
 
       const product = await productService.create(
@@ -171,11 +170,11 @@ if (req.file) {
       updateData.featured = updateData.featured === 'true';
     }
 
-    if (req.file) {
-      updateData.images = [
-        `/uploads/products/${req.file.filename}`
-      ];
-    }
+    if (req.files && Array.isArray(req.files) && req.files.length > 0) {
+  updateData.images = req.files.map(
+    (file) => `/uploads/products/${file.filename}`
+  );
+}
 
     const product = await productService.update(
       id,

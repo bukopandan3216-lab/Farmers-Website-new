@@ -191,23 +191,40 @@ export const productService = {
   },
 
   async delete(productId: string, farmerId: string) {
-    const product = await prisma.product.findUnique({
-      where: { id: productId },
-    });
+  console.log("DELETE PRODUCT:", productId);
+  console.log("USER:", farmerId);
 
-    if (!product) {
-      throw createError(404, 'Product not found');
-    }
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+  });
 
-    if (product.farmerId !== farmerId) {
-      throw createError(403, 'Unauthorized');
-    }
+  console.log("FOUND PRODUCT:", product);
 
-    await prisma.product.delete({
-      where: { id: productId },
-    });
-  },
+  if (!product) {
+    throw createError(404, "Product not found");
+  }
 
+  if (product.farmerId !== farmerId) {
+    console.log(
+      "OWNER MISMATCH:",
+      product.farmerId,
+      farmerId
+    );
+
+    throw createError(403, "Unauthorized");
+  }
+
+  await prisma.product.delete({
+    where: { id: productId },
+  });
+
+  console.log("DELETE SUCCESS");
+},
+
+  
+
+
+  
   async getFeatured() {
     const products = await prisma.product.findMany({
       where: { featured: true },

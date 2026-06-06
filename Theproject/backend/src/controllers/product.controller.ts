@@ -3,6 +3,7 @@ import { body, validationResult, param, query } from 'express-validator';
 import { AuthRequest } from '../middleware/auth.js';
 import { productService } from '../services/product.service.js';
 import { sendSuccess, sendError } from '../utils/response.js';
+import prisma from '../config/database.js';
 
 export const productController = {
   async getAll(req: AuthRequest, res: Response) {
@@ -210,7 +211,46 @@ if (req.files && Array.isArray(req.files)) {
   }
 },
 
-  async delete(req: AuthRequest, res: Response) {
+
+async delete(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user || !['FARMER', 'ADMIN'].includes(req.user.role)) {
+      return sendError(res, 403, 'Only farmers can delete products');
+    }
+
+    const { id } = req.params;
+
+    await productService.delete(
+      id,
+      req.user.userId
+    );
+
+    sendSuccess(
+      res,
+      200,
+      'Product deleted successfully'
+    );
+  } catch (error: any) {
+    console.error(error);
+
+    if (error.statusCode) {
+      sendError(
+        res,
+        error.statusCode,
+        error.message
+      );
+    } else {
+      sendError(
+        res,
+        500,
+        'Failed to delete product'
+      );
+    }
+  }
+}
+};
+
+ {/*} async delete(req: AuthRequest, res: Response) {
     try {
       if (!req.user || !['FARMER', 'ADMIN'].includes(req.user.role)) {
         return sendError(res, 403, 'Only farmers can delete products');
@@ -229,3 +269,5 @@ if (req.files && Array.isArray(req.files)) {
     }
   },
 };
+*/}
+

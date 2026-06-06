@@ -200,7 +200,7 @@ productImageFiles.forEach(file => {
     }
   };
 
-  const handleDeleteProduct = async (productId: string) => {
+  {/* const handleDeleteProduct = async (productId: string) => {
     if (!confirm("Are you sure you want to delete this product?")) return;
     try {
       await api.delete(`/products/${productId}`);
@@ -210,7 +210,26 @@ productImageFiles.forEach(file => {
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to delete product");
     }
-  };
+  }; */}
+
+  const handleDeleteProduct = async (productId: string) => {
+  console.log("Deleting:", productId);
+
+  if (!confirm("Are you sure?")) return;
+
+  try {
+    await api.delete(`/products/${productId}`);
+    toast.success("Product deleted");
+    refetchProducts();
+  } catch (error: any) {
+    console.error(error.response?.data);
+    toast.error(
+      error.response?.data?.message ||
+      "Failed to delete product"
+    );
+  }
+};
+
 
   const handleOrderClick = (order: any) => {
     setSelectedOrder(order);

@@ -124,7 +124,10 @@ setProductImageFile(null);
       organic: product.organic || false,
       featured: product.featured || false,
       images: product.images?.[0] || "",
+      
     });
+     setProductImageFile(null);
+     
     setIsProductModalOpen(true);
   };
 

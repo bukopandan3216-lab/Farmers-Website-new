@@ -120,7 +120,7 @@ if (req.file) {
       }
     }
   },
-
+/*
   async update(req: AuthRequest, res: Response) {
     try {
       if (!req.user || !['FARMER', 'ADMIN'].includes(req.user.role)) {
@@ -138,7 +138,56 @@ if (req.file) {
         sendError(res, 500, 'Failed to update product');
       }
     }
-  },
+  },*/
+  async update(req: AuthRequest, res: Response) {
+  try {
+    if (!req.user || !['FARMER', 'ADMIN'].includes(req.user.role)) {
+      return sendError(res, 403, 'Only farmers can update products');
+    }
+
+    const { id } = req.params;
+
+    const updateData: any = {
+      ...req.body,
+    };
+
+   if (req.file) {
+  updateData.images = [
+    `/uploads/products/${req.file.filename}`
+  ];
+}
+
+    const product = await productService.update(
+      id,
+      req.user.userId,
+      updateData
+    );
+
+    const apiOrigin = `${req.protocol}://${req.get('host')}`;
+
+    const mapped = {
+      ...product,
+      images: (product.images || []).map((img: string) =>
+        typeof img === 'string' && img.startsWith('/uploads')
+          ? `${apiOrigin}${img}`
+          : img
+      ),
+    };
+
+    sendSuccess(
+      res,
+      200,
+      'Product updated successfully',
+      mapped
+    );
+  } catch (error: any) {
+    if (error.statusCode) {
+      sendError(res, error.statusCode, error.message);
+    } else {
+      sendError(res, 500, 'Failed to update product');
+    }
+  }
+},
 
   async delete(req: AuthRequest, res: Response) {
     try {

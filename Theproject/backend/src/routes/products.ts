@@ -17,7 +17,14 @@ router.post(
   uploadProductImage.single('image'),
   productController.create
 );
-router.put('/:id', authMiddleware, roleMiddleware(['FARMER', 'ADMIN']), productController.update);
+//router.put('/:id', authMiddleware, roleMiddleware(['FARMER', 'ADMIN']), productController.update);
+router.put(
+  '/:id',
+  authMiddleware,
+  roleMiddleware(['FARMER', 'ADMIN']),
+  uploadProductImage.single('image'),
+  productController.update
+);
 router.delete('/:id', authMiddleware, roleMiddleware(['FARMER', 'ADMIN']), productController.delete);
 
 export default router;

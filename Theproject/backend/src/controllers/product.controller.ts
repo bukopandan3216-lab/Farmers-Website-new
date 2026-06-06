@@ -95,15 +95,19 @@ if (req.file) {
   ];
 }
 
-      const product = await productService.create(req.user.userId, {
-        name,
-        description,
-        categoryId,
-        price,
-        stock: stock || 0,
-        organic: organic || false,
-        images: images || [],
-      });
+      const product = await productService.create(
+  req.user.userId,
+  {
+    name,
+    description,
+    categoryId,
+    price: parseFloat(price),
+    stock: parseInt(stock || "0", 10),
+    organic: organic === "true",
+    featured: req.body.featured === "true",
+    images,
+  }
+);
 
       const apiOrigin = `${req.protocol}://${req.get('host')}`;
       const mapped = {
@@ -139,7 +143,7 @@ if (req.file) {
       }
     }
   },*/
-  async update(req: AuthRequest, res: Response) {
+ async update(req: AuthRequest, res: Response) {
   try {
     if (!req.user || !['FARMER', 'ADMIN'].includes(req.user.role)) {
       return sendError(res, 403, 'Only farmers can update products');
@@ -151,11 +155,27 @@ if (req.file) {
       ...req.body,
     };
 
-   if (req.file) {
-  updateData.images = [
-    `/uploads/products/${req.file.filename}`
-  ];
-}
+    if (updateData.price !== undefined) {
+      updateData.price = parseFloat(updateData.price);
+    }
+
+    if (updateData.stock !== undefined) {
+      updateData.stock = parseInt(updateData.stock, 10);
+    }
+
+    if (updateData.organic !== undefined) {
+      updateData.organic = updateData.organic === 'true';
+    }
+
+    if (updateData.featured !== undefined) {
+      updateData.featured = updateData.featured === 'true';
+    }
+
+    if (req.file) {
+      updateData.images = [
+        `/uploads/products/${req.file.filename}`
+      ];
+    }
 
     const product = await productService.update(
       id,
@@ -181,6 +201,8 @@ if (req.file) {
       mapped
     );
   } catch (error: any) {
+    console.error('UPDATE PRODUCT ERROR:', error);
+
     if (error.statusCode) {
       sendError(res, error.statusCode, error.message);
     } else {

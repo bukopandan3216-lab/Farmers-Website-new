@@ -72,7 +72,10 @@ export function FarmerDashboard() {
     featured: false,
     images: "",
   });
-  const [productSubmitting, setProductSubmitting] = useState(false);
+ // const [productSubmitting, setProductSubmitting] = useState(false);
+ //const [productImageFile, setProductImageFile] = useState<File | null>(null);
+ const [productSubmitting, setProductSubmitting] = useState(false);
+const [productImageFile, setProductImageFile] = useState<File | null>(null);
 
   const queryClient = useQueryClient();
 
@@ -94,7 +97,19 @@ export function FarmerDashboard() {
 
   const openAddProduct = () => {
     setEditingProduct(null);
-    setProductForm({ name: "", description: "", categoryId: "", price: "", stock: "", organic: false, featured: false, images: "" });
+   // setProductForm({ name: "", description: "", categoryId: "", price: "", stock: "", organic: false, featured: false, images: "" });
+   setProductForm({
+  name: "",
+  description: "",
+  categoryId: "",
+  price: "",
+  stock: "",
+  organic: false,
+  featured: false,
+  images: "",
+});
+
+setProductImageFile(null);
     setIsProductModalOpen(true);
   };
 
@@ -118,23 +133,54 @@ export function FarmerDashboard() {
       toast.error("Please fill in all required fields");
       return;
     }
+    //setProductSubmitting(true);
+    //setProductImageFile(null);
     setProductSubmitting(true);
     try {
-      const payload = {
-        name: productForm.name,
-        description: productForm.description,
-        categoryId: productForm.categoryId,
-        price: parseFloat(productForm.price),
-        stock: parseInt(productForm.stock) || 0,
-        organic: productForm.organic,
-        featured: productForm.featured,
-        images: productForm.images ? [productForm.images] : [],
-      };
+      const formData = new FormData();
+
+formData.append("name", productForm.name);
+formData.append(
+  "description",
+  productForm.description
+);
+formData.append(
+  "categoryId",
+  productForm.categoryId
+);
+formData.append(
+  "price",
+  productForm.price
+);
+formData.append(
+  "stock",
+  productForm.stock
+);
+formData.append(
+  "organic",
+  String(productForm.organic)
+);
+
+if (productImageFile) {
+  formData.append(
+    "image",
+    productImageFile
+  );
+}
       if (editingProduct) {
-        await api.put(`/products/${editingProduct.id}`, payload);
+        await api.put(`/products/${editingProduct.id}`, formData);
         toast.success("Product updated successfully!");
       } else {
-        await api.post("/products", payload);
+        //await api.post("/products", payload);
+        await api.post(
+  "/products",
+  formData,
+  {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  }
+);
         toast.success("Product added successfully!");
       }
       setIsProductModalOpen(false);
@@ -143,6 +189,7 @@ export function FarmerDashboard() {
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Failed to save product");
     } finally {
+      //setProductImageFile(null);
       setProductSubmitting(false);
     }
   };
@@ -689,20 +736,40 @@ export function FarmerDashboard() {
               </div>
             </div>
 
+
             <div>
-              <Label htmlFor="prod-image">Image URL</Label>
-              <Input
-                id="prod-image"
-                placeholder="https://example.com/image.jpg"
-                value={productForm.images}
-                onChange={(e) => setProductForm({ ...productForm, images: e.target.value })}
-              />
-              {productForm.images && (
-                <div className="mt-2 h-32 rounded-lg overflow-hidden border">
-                  <img src={productForm.images} alt="Preview" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
-                </div>
-              )}
-            </div>
+ 
+
+  <Label htmlFor="prod-image">Product Image</Label>
+
+<Input
+  id="prod-image"
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0];
+
+    if (!file) return;
+
+    setProductImageFile(file);
+
+    setProductForm({
+      ...productForm,
+      images: URL.createObjectURL(file),
+    });
+  }}
+/>
+
+  {productForm.images && (
+    <div className="mt-2 h-32 rounded-lg overflow-hidden border">
+      <img
+        src={productForm.images}
+        alt="Preview"
+        className="w-full h-full object-cover"
+      />
+    </div>
+  )}
+</div>
 
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -727,15 +794,24 @@ export function FarmerDashboard() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsProductModalOpen(false)} disabled={productSubmitting}>
+            <Button
+  variant="outline"
+  onClick={() => setIsProductModalOpen(false)}
+  disabled={productSubmitting}
+>
               Cancel
             </Button>
             <Button
-              onClick={handleProductSubmit}
-              disabled={productSubmitting}
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {productSubmitting ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}
+  onClick={handleProductSubmit}
+  disabled={productSubmitting}
+  className="bg-emerald-600 hover:bg-emerald-700"
+>
+              {productImageFile ? "Saving..." : editingProduct ? "Save Changes" : "Add Product"}
+             {productSubmitting
+  ? "Saving..."
+  : editingProduct
+  ? "Save Changes"
+  : "Add Product"}
             </Button>
           </DialogFooter>
         </DialogContent>

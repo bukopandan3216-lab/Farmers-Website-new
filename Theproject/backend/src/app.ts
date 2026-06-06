@@ -12,6 +12,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import { config } from './config/index.js';
 
 // Routes
+//import path from "path";
 import authRoutes from './routes/auth.js';
 import productRoutes from './routes/products.js';
 import farmerRoutes from './routes/farmers.js';

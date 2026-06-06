@@ -70,12 +70,30 @@ export const productController = {
         return sendError(res, 403, 'Only farmers can create products');
       }
 
-      const { name, description, categoryId, price, stock, organic, images } =
-        req.body;
+     // const { name, description, categoryId, price, stock, organic, images } =
+       // req.body;
+
+       const {
+  name,
+  description,
+  categoryId,
+  price,
+  stock,
+  organic,
+} = req.body;
+
 
       if (!name || !categoryId || !price) {
         return sendError(res, 400, 'Missing required fields');
       }
+
+      let images: string[] = [];
+
+if (req.file) {
+  images = [
+    `/uploads/products/${req.file.filename}`
+  ];
+}
 
       const product = await productService.create(req.user.userId, {
         name,
